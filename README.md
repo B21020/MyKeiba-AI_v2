@@ -1,11 +1,5 @@
-この度は、書籍のご購入・コミュニティへのご参加、ありがとうございます！
-
-# 使い方
-[issueをトピック別にまとめたボード](https://github.com/keibaAI-community/readers-repo/projects/2)または[Issues](https://github.com/keibaAI-community/readers-repo/issues)から現在議論中or過去に議論された話題を見ることができます。まずは興味のある話題がすでに無いか探してみてください。issueのリンクへ飛ぶと、一番下のLeave commentからコメントできるようになっています。
-
-まだ議論されていない場合は、「New Isssues」をクリックして新しい話題を作ってください。
-
-「読者コミュニティ」に元々あったコメントは全てIssuesにコピーしています。（タイトルなど勝手に付けてしまったので、わかりづらかったらすみません。）
+# keibaAI-v2
+共同開発用のリポジトリ。修正点・追加機能などの要望やpull requestはこちらへ。
 
 # ライセンスについて
 - このレポジトリや書籍に掲載されているソースコードにつきまして、コミュニティ外部への転載・再配布はお控えください。
@@ -19,4 +13,8 @@ main.ipynbが実行するnotebookとなります。
 コードの構成など、だいぶ変わった部分が多いので、今後一つずつ説明していく予定です。
 
 # データフロー図(作成中)
+## 全体図
 ![DFD drawio](https://user-images.githubusercontent.com/59597959/172866720-6c945291-7e09-414e-8310-ed0cb776d891.png)
+
+## スクレイピング
+![DFD-scraping drawio](https://user-images.githubusercontent.com/59597959/173863609-03924cda-f916-4e5e-aacb-096baa8fc0a2.png)
