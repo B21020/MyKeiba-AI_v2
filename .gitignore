@@ -1,0 +1,15 @@
+# Pythonキャッシュ
+*.pyc
+
+# データは容量が大きすぎので除外
+data/**/*.pickle
+data/**/*.csv
+data/**/**/*.bin
+models/**/*.pickle
+*.pickle
+.DS_Store
+
+# 実行結果を除外
+output/**/*.md
+output/**/*.png
+
