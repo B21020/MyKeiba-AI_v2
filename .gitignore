@@ -3,7 +3,6 @@
 
 # データは容量が大きすぎので除外
 data/**/*.pickle
-data/**/*.csv
 data/**/**/*.bin
 models/**/*.pickle
 *.pickle
