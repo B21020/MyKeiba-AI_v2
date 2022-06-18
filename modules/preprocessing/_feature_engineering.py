@@ -69,10 +69,11 @@ class FeatureEngineering:
         """
         csv_path = 'data/master/horse_id.csv'
         horse_master = pd.read_csv(csv_path, dtype=object)
+        # masterに存在しない馬を抽出
         new_horses = self.__data[[Cols.HORSE_ID]][
             ~self.__data[Cols.HORSE_ID].isin(horse_master['horse_id'])
             ].drop_duplicates(subset=['horse_id'])
-        new_horses['encoded_id'] = [i+len(horse_master) for i in range(len(new_horses))]
+        new_horses['encoded_id'] = [i+max(horse_master) for i in range(1, len(new_horses)+1)]
         new_horse_master = pd.concat([horse_master, new_horses]).set_index('horse_id')['encoded_id']
         new_horse_master.to_csv(csv_path)
         self.__data[Cols.HORSE_ID] = pd.Categorical(self.__data[Cols.HORSE_ID].map(new_horse_master))
@@ -87,7 +88,7 @@ class FeatureEngineering:
         new_jockeys = self.__data[[Cols.JOCKEY_ID]][
             ~self.__data[Cols.JOCKEY_ID].isin(jockey_master['jockey_id'])
             ].drop_duplicates(subset=['jockey_id'])
-        new_jockeys['encoded_id'] = [i+len(jockey_master) for i in range(len(new_jockeys))]
+        new_jockeys['encoded_id'] = [i+max(jockey_master) for i in range(1, len(new_jockeys)+1)]
         new_jockey_master = pd.concat([jockey_master, new_jockeys]).set_index('jockey_id')['encoded_id']
         new_jockey_master.to_csv(csv_path)
         self.__data[Cols.JOCKEY_ID] = pd.Categorical(self.__data[Cols.JOCKEY_ID].map(new_jockey_master))
