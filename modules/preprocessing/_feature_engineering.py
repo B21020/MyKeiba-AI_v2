@@ -69,13 +69,17 @@ class FeatureEngineering:
         """
         csv_path = 'data/master/horse_id.csv'
         horse_master = pd.read_csv(csv_path, dtype=object)
-        # masterに存在しない馬を抽出
+        # masterに存在しない、新しい馬を抽出
         new_horses = self.__data[[Cols.HORSE_ID]][
             ~self.__data[Cols.HORSE_ID].isin(horse_master['horse_id'])
             ].drop_duplicates(subset=['horse_id'])
+        # 新しい馬を登録
         new_horses['encoded_id'] = [i+max(horse_master) for i in range(1, len(new_horses)+1)]
+        # 元のマスタと繋げる
         new_horse_master = pd.concat([horse_master, new_horses]).set_index('horse_id')['encoded_id']
+        # マスタファイルを更新
         new_horse_master.to_csv(csv_path)
+        # ラベルエンコーディング実行
         self.__data[Cols.HORSE_ID] = pd.Categorical(self.__data[Cols.HORSE_ID].map(new_horse_master))
         return self
     
@@ -85,12 +89,17 @@ class FeatureEngineering:
         """
         csv_path = 'data/master/jockey_id.csv'
         jockey_master = pd.read_csv(csv_path, dtype=object)
+        # masterに存在しない、新しい騎手を抽出
         new_jockeys = self.__data[[Cols.JOCKEY_ID]][
             ~self.__data[Cols.JOCKEY_ID].isin(jockey_master['jockey_id'])
             ].drop_duplicates(subset=['jockey_id'])
+        # 新しい騎手を登録
         new_jockeys['encoded_id'] = [i+max(jockey_master) for i in range(1, len(new_jockeys)+1)]
+        # 元のマスタと繋げる
         new_jockey_master = pd.concat([jockey_master, new_jockeys]).set_index('jockey_id')['encoded_id']
+        # マスタファイルを更新
         new_jockey_master.to_csv(csv_path)
+        # ラベルエンコーディング実行
         self.__data[Cols.JOCKEY_ID] = pd.Categorical(self.__data[Cols.JOCKEY_ID].map(new_jockey_master))
         return self
     
