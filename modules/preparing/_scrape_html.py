@@ -61,3 +61,8 @@ def scrape_html_ped(horse_id_list: list, skip: bool = True):
         with open(filename, 'wb') as f: #保存するファイルパスを指定
             f.write(html) #保存
     return html_path_list
+
+#def scrape_html_horse_with_hogehoge():
+    #pass
+    #scrape_html_horse():
+    # 馬ごとに、最後にデータを取得した日を記録する処理
