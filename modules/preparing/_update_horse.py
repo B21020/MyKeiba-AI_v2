@@ -40,7 +40,7 @@ class UpdateHorse:
     
     def update_horse_results(self, horse_id_list: list):
         """
-        netkeiba.com/horse/をスクレイピングし、data/raw/horse_results_{today}.pickleとして保存
+        netkeiba.com/horse/をスクレイピングし、data/raw/horse_results/horse_results_{today}.pickleとして保存
         """
         print('scraping horse_results')
         html_files = preparing.scrape_html_horse(horse_id_list, skip=False)
@@ -49,7 +49,7 @@ class UpdateHorse:
         
     def update_peds(self, horse_id_list: list):
         """
-        netkeiba.com/horse/ped/をスクレイピングし、data/raw/peds_{today}.pickleとして保存
+        netkeiba.com/horse/ped/をスクレイピングし、data/raw/peds/peds_{today}.pickleとして保存
         """
         print('scraping peds')
         html_files = preparing.scrape_html_ped(horse_id_list, skip=True)
