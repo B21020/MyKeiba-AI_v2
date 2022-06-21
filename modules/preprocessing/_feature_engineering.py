@@ -57,8 +57,8 @@ class FeatureEngineering:
         """
         sexカラムをダミー変数化する
         """
-        self.__data['sex'] = pd.Categorical(self.__data['sex'], Master.SEX_LIST)
-        self.__data = pd.get_dummies(self.__data, columns=['sex'])
+        self.__data['性'] = pd.Categorical(self.__data['性'], Master.SEX_LIST)
+        self.__data = pd.get_dummies(self.__data, columns=['性'])
         return self
     
     def encode_horse_id(self):
