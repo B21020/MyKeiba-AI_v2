@@ -3,8 +3,9 @@ import pandas as pd
 import lightgbm as lgb
 from sklearn.metrics import roc_auc_score
 import optuna.integration.lightgbm as lgb_o
-from ._data_splitter import DataSplitter
 
+from ._data_splitter import DataSplitter
+from modules.constants import ResultsCols
 
 class ModelWrapper:
     """
@@ -60,7 +61,8 @@ class ModelWrapper:
             datasets.y_train, self.__lgb_model.predict_proba(datasets.X_train)[:, 1]
             )
         auc_test = roc_auc_score(
-            datasets.y_test, self.__lgb_model.predict_proba(datasets.X_test.drop(['単勝'], axis=1))[:, 1]
+            datasets.y_test,
+            self.__lgb_model.predict_proba(datasets.X_test.drop([ResultsCols.TANSHO_ODDS], axis=1))[:, 1]
             )
         # 特徴量の重要度を記憶しておく
         self.__feature_importance = pd.DataFrame({

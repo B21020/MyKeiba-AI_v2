@@ -1,10 +1,8 @@
-from numpy import dtype
 import pandas as pd
-from psutil import MACOS
-from sklearn.preprocessing import LabelEncoder
+
 from ._data_merger import DataMerger
-from modules.constants import MergedDataCols as Cols
 from modules.constants import Master
+from modules.constants import HorseResultsCols
 
 class FeatureEngineering:
     """
@@ -31,36 +29,36 @@ class FeatureEngineering:
         """
         weatherカラムをダミー変数化する
         """
-        self.__data[Cols.WEATHER] = pd.Categorical(self.__data[Cols.WEATHER], Master.WEATHER_LIST)
-        self.__data = pd.get_dummies(self.__data, columns=[Cols.WEATHER])
+        self.__data['weather'] = pd.Categorical(self.__data['weather'], Master.WEATHER_LIST)
+        self.__data = pd.get_dummies(self.__data, columns=['weather'])
         return self
     
     def dumminize_race_type(self):
         """
         race_typeカラムをダミー変数化する
         """
-        self.__data[Cols.RACE_TYPE] = pd.Categorical(
-            self.__data[Cols.RACE_TYPE], list(Master.RACE_TYPE_DICT.values())
+        self.__data['race_type'] = pd.Categorical(
+            self.__data['race_type'], list(Master.RACE_TYPE_DICT.values())
             )
-        self.__data = pd.get_dummies(self.__data, columns=[Cols.RACE_TYPE])
+        self.__data = pd.get_dummies(self.__data, columns=['race_type'])
         return self
     
     def dumminize_ground_state(self):
         """
         ground_stateカラムをダミー変数化する
         """
-        self.__data[Cols.GROUND_STATE] = pd.Categorical(
-            self.__data[Cols.GROUND_STATE], Master.GROUND_STATE_LIST
+        self.__data['ground_state'] = pd.Categorical(
+            self.__data['ground_state'], Master.GROUND_STATE_LIST
             )
-        self.__data = pd.get_dummies(self.__data, columns=[Cols.GROUND_STATE])
+        self.__data = pd.get_dummies(self.__data, columns=['ground_state'])
         return self
     
     def dumminize_sex(self):
         """
         sexカラムをダミー変数化する
         """
-        self.__data[Cols.SEX] = pd.Categorical(self.__data[Cols.SEX], Master.SEX_LIST)
-        self.__data = pd.get_dummies(self.__data, columns=[Cols.SEX])
+        self.__data['sex'] = pd.Categorical(self.__data['sex'], Master.SEX_LIST)
+        self.__data = pd.get_dummies(self.__data, columns=['sex'])
         return self
     
     def encode_horse_id(self):
@@ -70,8 +68,8 @@ class FeatureEngineering:
         csv_path = 'data/master/horse_id.csv'
         horse_master = pd.read_csv(csv_path, dtype=object)
         # masterに存在しない、新しい馬を抽出
-        new_horses = self.__data[[Cols.HORSE_ID]][
-            ~self.__data[Cols.HORSE_ID].isin(horse_master['horse_id'])
+        new_horses = self.__data[['horse_id']][
+            ~self.__data['horse_id'].isin(horse_master['horse_id'])
             ].drop_duplicates(subset=['horse_id'])
         # 新しい馬を登録
         new_horses['encoded_id'] = [i+max(horse_master) for i in range(1, len(new_horses)+1)]
@@ -80,7 +78,7 @@ class FeatureEngineering:
         # マスタファイルを更新
         new_horse_master.to_csv(csv_path)
         # ラベルエンコーディング実行
-        self.__data[Cols.HORSE_ID] = pd.Categorical(self.__data[Cols.HORSE_ID].map(new_horse_master))
+        self.__data['horse_id'] = pd.Categorical(self.__data['horse_id'].map(new_horse_master))
         return self
     
     def encode_jockey_id(self):
@@ -90,8 +88,8 @@ class FeatureEngineering:
         csv_path = 'data/master/jockey_id.csv'
         jockey_master = pd.read_csv(csv_path, dtype=object)
         # masterに存在しない、新しい騎手を抽出
-        new_jockeys = self.__data[[Cols.JOCKEY_ID]][
-            ~self.__data[Cols.JOCKEY_ID].isin(jockey_master['jockey_id'])
+        new_jockeys = self.__data[['jockey_id']][
+            ~self.__data['jockey_id'].isin(jockey_master['jockey_id'])
             ].drop_duplicates(subset=['jockey_id'])
         # 新しい騎手を登録
         new_jockeys['encoded_id'] = [i+max(jockey_master) for i in range(1, len(new_jockeys)+1)]
@@ -100,12 +98,12 @@ class FeatureEngineering:
         # マスタファイルを更新
         new_jockey_master.to_csv(csv_path)
         # ラベルエンコーディング実行
-        self.__data[Cols.JOCKEY_ID] = pd.Categorical(self.__data[Cols.JOCKEY_ID].map(new_jockey_master))
+        self.__data['jockey_id'] = pd.Categorical(self.__data['jockey_id'].map(new_jockey_master))
         return self
     
     def dumminize_kaisai(self):
-        self.__data[Cols.KAISAI] = pd.Categorical(
-            self.__data[Cols.KAISAI], list(Master.PLACE_DICT.values())
+        self.__data[HorseResultsCols.PLACE] = pd.Categorical(
+            self.__data[HorseResultsCols.PLACE], list(Master.PLACE_DICT.values())
             )
-        self.__data = pd.get_dummies(self.__data, columns=[Cols.KAISAI])
+        self.__data = pd.get_dummies(self.__data, columns=[HorseResultsCols.PLACE])
         return self
