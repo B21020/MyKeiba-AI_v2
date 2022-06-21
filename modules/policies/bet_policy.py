@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractstaticmethod
 import pandas as pd
 
+from modules.constants import ResultsCols
+
 class AbstractBetPolicy(metaclass=ABCMeta):
     """
     クラスの型を決めるための抽象クラス。
@@ -29,7 +31,7 @@ class BetPolicyTansho:
         filtered_table = score_table.query('score >= @threshold')
         for race_id, table in filtered_table.groupby(level=0):
             bet_dict_1R = {}
-            bet_dict_1R['tansho'] = list(table['馬番'])
+            bet_dict_1R['tansho'] = list(table[ResultsCols.UMABAN])
             bet_dict[race_id] = bet_dict_1R
         return bet_dict
     
@@ -43,7 +45,7 @@ class BetPolicyFukusho:
         filtered_table = score_table.query('score >= @threshold')
         for race_id, table in filtered_table.groupby(level=0):
             bet_dict_1R = {}
-            bet_dict_1R['fukusho'] = list(table['馬番'])
+            bet_dict_1R['fukusho'] = list(table[ResultsCols.UMABAN])
             bet_dict[race_id] = bet_dict_1R
         return bet_dict
     
@@ -54,7 +56,7 @@ class BetPolicyUmarenBox:
         for race_id, table in filtered_table.groupby(level=0):
             if len(table) >= 2:
                 bet_dict_1R = {}
-                bet_dict_1R['fukusho'] = list(table['馬番'])
+                bet_dict_1R['fukusho'] = list(table[ResultsCols.UMABAN])
                 bet_dict[race_id] = bet_dict_1R
         return bet_dict
     
@@ -65,7 +67,7 @@ class BetPolicyUmatanBox:
         for race_id, table in filtered_table.groupby(level=0):
             if len(table) >= 2:
                 bet_dict_1R = {}
-                bet_dict_1R['umatan'] = list(table['馬番'])
+                bet_dict_1R['umatan'] = list(table[ResultsCols.UMABAN])
                 bet_dict[race_id] = bet_dict_1R
         return bet_dict
 
@@ -76,7 +78,7 @@ class BetPolicyWideBox:
         for race_id, table in filtered_table.groupby(level=0):
             if len(table) >= 2:
                 bet_dict_1R = {}
-                bet_dict_1R['wide'] = list(table['馬番'])
+                bet_dict_1R['wide'] = list(table[ResultsCols.UMABAN])
                 bet_dict[race_id] = bet_dict_1R
         return bet_dict
 
@@ -87,7 +89,7 @@ class BetPolicySanrenpukuBox:
         for race_id, table in filtered_table.groupby(level=0):
             if len(table) >= 3:
                 bet_dict_1R = {}
-                bet_dict_1R['sanrenpuku'] = list(table['馬番'])
+                bet_dict_1R['sanrenpuku'] = list(table[ResultsCols.UMABAN])
                 bet_dict[race_id] = bet_dict_1R
         return bet_dict
     
@@ -98,7 +100,7 @@ class BetPolicySanrentanBox:
         for race_id, table in filtered_table.groupby(level=0):
             if len(table) >= 3:
                 bet_dict_1R = {}
-                bet_dict_1R['sanrentan'] = list(table['馬番'])
+                bet_dict_1R['sanrentan'] = list(table[ResultsCols.UMABAN])
                 bet_dict[race_id] = bet_dict_1R
         return bet_dict
     
@@ -112,7 +114,7 @@ class BetPolicyUmatanNagashi:
         filtered_table['flg'] = filtered_table['score'].map(lambda x: 'jiku' if x >= threshold1 else 'aite')
         for race_id, table in filtered_table.groupby(level=0):
             bet_dict_1R = {}
-            bet_dict_1R['tansho'] = list(table.query('flg == "tansho"')['馬番'])
-            bet_dict_1R['fukusho'] = list(table.query('flg == "fukusho"')['馬番'])
+            bet_dict_1R['tansho'] = list(table.query('flg == "tansho"')[ResultsCols.UMABAN])
+            bet_dict_1R['fukusho'] = list(table.query('flg == "fukusho"')[ResultsCols.UMABAN])
             bet_dict[race_id] = bet_dict_1R
         return bet_dict

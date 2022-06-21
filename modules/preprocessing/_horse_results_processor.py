@@ -1,7 +1,9 @@
 import pandas as pd
 import re
+
 from ._abstract_data_processor import AbstractDataProcessor
-from modules.constants import Master as master
+from modules.constants import Master
+from modules.constants import HorseResultsCols as Cols
 
 
 class HorseResultsProcessor(AbstractDataProcessor):
@@ -12,18 +14,19 @@ class HorseResultsProcessor(AbstractDataProcessor):
         df = self.raw_data
 
         # 着順に数字以外の文字列が含まれているものを取り除く
-        df['着順'] = pd.to_numeric(df['着順'], errors='coerce')
-        df.dropna(subset=['着順'], inplace=True)
-        df['着順'] = df['着順'].astype(int)
+        # サイト上のテーブルに存在する列名は、HorseResultsColsクラスで定数化している。
+        df[Cols.RANK] = pd.to_numeric(df[Cols.RANK], errors='coerce')
+        df.dropna(subset=[Cols.RANK], inplace=True)
+        df[Cols.RANK] = df[Cols.RANK].astype(int)
 
-        df["date"] = pd.to_datetime(df["日付"])
-        df.drop(['日付'], axis=1, inplace=True)
+        df["date"] = pd.to_datetime(df[Cols.DATE])
+        df.drop([Cols.DATE], axis=1, inplace=True)
         
         #賞金のNaNを0で埋める
-        df['賞金'].fillna(0, inplace=True)
+        df[Cols.PRIZE].fillna(0, inplace=True)
         
         #1着の着差を0にする
-        df['着差'] = df['着差'].map(lambda x: 0 if x<0 else x)
+        df[Cols.RANK_DIFF] = df[Cols.RANK_DIFF].map(lambda x: 0 if x<0 else x)
         
         #レース展開データ
         #n=1: 最初のコーナー位置, n=4: 最終コーナー位置
@@ -34,20 +37,20 @@ class HorseResultsProcessor(AbstractDataProcessor):
                 return int(re.findall(r'\d+', x)[-1])
             elif n==1:
                 return int(re.findall(r'\d+', x)[0])
-        df['first_corner'] = df['通過'].map(lambda x: corner(x, 1))
-        df['final_corner'] = df['通過'].map(lambda x: corner(x, 4))
+        df['first_corner'] = df[Cols.CORNER].map(lambda x: corner(x, 1))
+        df['final_corner'] = df[Cols.CORNER].map(lambda x: corner(x, 4))
         
-        df['final_to_rank'] = df['final_corner'] - df['着順']
-        df['first_to_rank'] = df['first_corner'] - df['着順']
+        df['final_to_rank'] = df['final_corner'] - df[Cols.RANK]
+        df['first_to_rank'] = df['first_corner'] - df[Cols.RANK]
         df['first_to_final'] = df['first_corner'] - df['final_corner']
         
         #開催場所
-        df['開催'] = df['開催'].str.extract(r'(\D+)')[0].map(master.PLACE_DICT).fillna('11')
+        df[Cols.PLACE] = df[Cols.PLACE].str.extract(r'(\D+)')[0].map(Master.PLACE_DICT).fillna('11')
         #race_type
-        df['race_type'] = df['距離'].str.extract(r'(\D+)')[0].map(master.RACE_TYPE_DICT)
+        df['race_type'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\D+)')[0].map(Master.RACE_TYPE_DICT)
         #距離は10の位を切り捨てる
-        df['course_len'] = df['距離'].str.extract(r'(\d+)').astype(int) // 100
-        df.drop(['距離'], axis=1, inplace=True)
+        df['course_len'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\d+)').astype(int) // 100
+        df.drop([Cols.RACE_TYPE_COURSE_LEN], axis=1, inplace=True)
         #インデックス名を与える
         df.index.name = 'horse_id'
         

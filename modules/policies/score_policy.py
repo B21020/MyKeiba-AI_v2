@@ -1,6 +1,9 @@
 from abc import ABCMeta, abstractstaticmethod
 import pandas as pd
 
+from modules.constants import ResultsCols
+
+
 class AbstractScorePolicy(metaclass=ABCMeta):
     @abstractstaticmethod
     def calc(model, X: pd.DataFrame):
@@ -12,8 +15,8 @@ class BasicScorePolicy(AbstractScorePolicy):
     """
     @staticmethod
     def calc(model, X: pd.DataFrame):
-        score_table = X[['馬番', '単勝']].copy()
-        score = model.predict_proba(X.drop(['単勝'], axis=1))[:, 1]
+        score_table = X[[ResultsCols.UMABAN, ResultsCols.TANSHO_ODDS]].copy()
+        score = model.predict_proba(X.drop([ResultsCols.TANSHO_ODDS], axis=1))[:, 1]
         score_table['score'] = score
         return score_table    
 
@@ -23,8 +26,8 @@ class StdScorePolicy(AbstractScorePolicy):
     """
     @staticmethod
     def calc(model, X: pd.DataFrame):
-        score_table = X[['馬番', '単勝']].copy()
-        score = model.predict_proba(X.drop(['単勝'], axis=1))[:, 1]
+        score_table = X[[ResultsCols.UMABAN, ResultsCols.TANSHO_ODDS]].copy()
+        score = model.predict_proba(X.drop([ResultsCols.TANSHO_ODDS], axis=1))[:, 1]
         score_table['score'] = score
         standard_scaler = lambda x: (x - x.mean()) / x.std(ddof=0)
         score_table['score'] = score_table['score'].groupby(level=0).transform(standard_scaler)
@@ -36,8 +39,8 @@ class MinMaxScorePolicy(AbstractScorePolicy):
     """
     @staticmethod
     def calc(model, X: pd.DataFrame):
-        score_table = X[['馬番', '単勝']].copy()
-        score = model.predict_proba(X.drop(['単勝'], axis=1))[:, 1]
+        score_table = X[[ResultsCols.UMABAN, ResultsCols.TANSHO_ODDS]].copy()
+        score = model.predict_proba(X.drop([ResultsCols.TANSHO_ODDS], axis=1))[:, 1]
         standard_scaler = lambda x: (x - x.mean()) / x.std(ddof=0)
         score = score.groupby(level=0).transform(standard_scaler)
         score = (score - score.min()) / (score.max() - score.min())
