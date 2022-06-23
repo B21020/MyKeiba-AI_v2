@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 from modules.constants import UrlPaths
+from modules.constants import ResultsCols as Cols
 
 def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     """
@@ -31,7 +32,7 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
             
         #レース結果テーブルと列を揃える
         df = df[[0, 1, 5, 6, 11, 12, 10, 3, 7]]
-        df.columns = ['枠番', '馬番', '性齢', '斤量', '単勝', '人気', '馬体重', 'horse_id', 'jockey_id']
+        df.columns = [Cols.WAKUBAN, Cols.UMABAN, Cols.SEX_AGE, Cols.KINRYO, Cols.TANSHO_ODDS, Cols.POPULARITY, Cols.WEIGHT_AND_DIFF, 'horse_id', 'jockey_id']
         df.index = [race_id] * len(df)
         
         #レース情報の取得
@@ -65,22 +66,22 @@ def preprocess(self):
     df = self.raw_data
 
     # 性齢を性と年齢に分ける
-    df["性"] = df["性齢"].map(lambda x: str(x)[0])
-    df["年齢"] = df["性齢"].map(lambda x: str(x)[1:]).astype(int)
+    df["性"] = df[Cols.SEX_AGE].map(lambda x: str(x)[0])
+    df["年齢"] = df[Cols.SEX_AGE].map(lambda x: str(x)[1:]).astype(int)
 
     # 馬体重を体重と体重変化に分ける
-    df["体重"] = df["馬体重"].str.split("(", expand=True)[0]
-    df["体重変化"] = df["馬体重"].str.split("(", expand=True)[1].str[:-1]
+    df["体重"] = df[Cols.WEIGHT_AND_DIFF].str.split("(", expand=True)[0]
+    df["体重変化"] = df[Cols.WEIGHT_AND_DIFF].str.split("(", expand=True)[1].str[:-1]
     
     #errors='coerce'で、"計不"など変換できない時に欠損値にする
     df['体重'] = pd.to_numeric(df['体重'], errors='coerce')
     df['体重変化'] = pd.to_numeric(df['体重変化'], errors='coerce')
 
     # 単勝をfloatに変換
-    df["単勝"] = df["単勝"].astype(float)
+    df[Cols.TANSHO_ODDS] = df[Cols.TANSHO_ODDS].astype(float)
 
     # 不要な列を削除
-    df.drop(["性齢", "馬体重"], axis=1, inplace=True)
+    df.drop([Cols.SEX_AGE, Cols.WEIGHT_AND_DIFF], axis=1, inplace=True)
     
     #6/6出走数追加
     df['n_horses'] = df.index.map(df.index.value_counts())
