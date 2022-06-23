@@ -72,7 +72,9 @@ class FeatureEngineering:
             ~self.__data['horse_id'].isin(horse_master['horse_id'])
             ].drop_duplicates(subset=['horse_id'])
         # 新しい馬を登録
-        new_horses['encoded_id'] = [i+max(horse_master) for i in range(1, len(new_horses)+1)]
+        new_horses['encoded_id'] = [
+            i+max(horse_master['encoded_id']) for i in range(1, len(new_horses)+1)
+            ]
         # 元のマスタと繋げる
         new_horse_master = pd.concat([horse_master, new_horses]).set_index('horse_id')['encoded_id']
         # マスタファイルを更新
@@ -92,7 +94,9 @@ class FeatureEngineering:
             ~self.__data['jockey_id'].isin(jockey_master['jockey_id'])
             ].drop_duplicates(subset=['jockey_id'])
         # 新しい騎手を登録
-        new_jockeys['encoded_id'] = [i+max(jockey_master) for i in range(1, len(new_jockeys)+1)]
+        new_jockeys['encoded_id'] = [
+            i+max(jockey_master['encoded_id']) for i in range(1, len(new_jockeys)+1)
+            ]
         # 元のマスタと繋げる
         new_jockey_master = pd.concat([jockey_master, new_jockeys]).set_index('jockey_id')['encoded_id']
         # マスタファイルを更新
