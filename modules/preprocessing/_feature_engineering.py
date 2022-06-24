@@ -2,8 +2,7 @@ import os
 import pandas as pd
 
 from ._data_merger import DataMerger
-from modules.constants import Master
-from modules.constants import HorseResultsCols
+from modules.constants import LocalDirs, HorseResultsCols, Master
 
 class FeatureEngineering:
     """
@@ -66,7 +65,7 @@ class FeatureEngineering:
         """
         horse_idをラベルエンコーディングして、Categorical型に変換する。
         """
-        csv_path = 'data/master/horse_id.csv'
+        csv_path = os.path.join(LocalDirs.MASTER_DIR, 'horse_id.csv')
         if not os.path.isfile(csv_path):
             # ファイルが存在しない場合、空のDataFrameを作成
             horse_master = pd.DataFrame(columns=['horse_id', 'encoded_id'])
@@ -95,7 +94,7 @@ class FeatureEngineering:
         """
         jockey_idをラベルエンコーディングして、Categorical型に変換する。
         """
-        csv_path = 'data/master/jockey_id.csv'
+        csv_path = os.path.join(LocalDirs.MASTER_DIR, 'jockey_id.csv')
         if not os.path.isfile(csv_path):
             # ファイルが存在しない場合、空のDataFrameを作成
             jockey_master = pd.DataFrame(columns=['jockey_id', 'encoded_id'])
