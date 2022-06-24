@@ -39,7 +39,7 @@ def get_rawdata_results(html_path_list: list):
                 df["jockey_id"] = jockey_id_list
 
                 #インデックスをrace_idにする
-                race_id = re.findall('(?<=race/)\d+', html_path)[0]
+                race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
 
                 race_results[race_id] = df
@@ -86,7 +86,7 @@ def get_rawdata_info(html_path_list: list):
                         df["date"] = [text]
                 
                 #インデックスをrace_idにする
-                race_id = re.findall('(?<=race/)\d+', html_path)[0]
+                race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
 
                 race_infos[race_id] = df
@@ -115,7 +115,7 @@ def get_rawdata_return(html_path_list: list):
                 #dfsの1番目に単勝〜馬連、2番目にワイド〜三連単がある
                 df = pd.concat([dfs[1], dfs[2]])
                 
-                race_id = re.findall('(?<=race/)\d+', html_path)[0]
+                race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
                 horse_results[race_id] = df
             except Exception as e:
@@ -140,7 +140,7 @@ def get_rawdata_horse_results(html_path_list: list):
             if df.columns[0]=='受賞歴':
                 df = pd.read_html(html)[4]
                 
-            horse_id = re.findall('(?<=horse/)\d+', html_path)[0]
+            horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
             
             df.index = [horse_id] * len(df)
             horse_results[horse_id] = df
@@ -163,7 +163,7 @@ def get_rawdata_peds(html_path_list: list):
 
             #重複を削除して1列のSeries型データに直す
             generations = {}
-            horse_id = re.findall('(?<=ped/)\d+', html_path)[0]
+            horse_id = re.findall('ped\W(\d+).bin', html_path)[0]
             for i in reversed(range(5)):
                 generations[i] = df[i]
                 df.drop([i], axis=1, inplace=True)

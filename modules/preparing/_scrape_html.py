@@ -80,7 +80,7 @@ def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
     updated_html_path_list = scrape_html_horse(horse_id_list, skip)
     # パスから正規表現でhorse_id_listを取得
     horse_id_list = [
-        re.findall('(?<=horse/)\d+', html_path)[0] for html_path in updated_html_path_list
+        re.findall('horse\W(\d+).bin', html_path)[0] for html_path in updated_html_path_list
         ]
     # DataFrameにしておく
     horse_id_df = pd.DataFrame({'horse_id': horse_id_list})
