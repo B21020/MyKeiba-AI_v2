@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 
 from ._data_merger import DataMerger
@@ -66,15 +67,22 @@ class FeatureEngineering:
         horse_idをラベルエンコーディングして、Categorical型に変換する。
         """
         csv_path = 'data/master/horse_id.csv'
-        horse_master = pd.read_csv(csv_path, dtype=object)
+        if not os.path.isfile(csv_path):
+            # ファイルが存在しない場合、空のDataFrameを作成
+            horse_master = pd.DataFrame(columns=['horse_id', 'encoded_id'])
+        else:
+            horse_master = pd.read_csv(csv_path, dtype=object)
         # masterに存在しない、新しい馬を抽出
         new_horses = self.__data[['horse_id']][
             ~self.__data['horse_id'].isin(horse_master['horse_id'])
             ].drop_duplicates(subset=['horse_id'])
         # 新しい馬を登録
-        new_horses['encoded_id'] = [
-            i+max(horse_master['encoded_id']) for i in range(1, len(new_horses)+1)
-            ]
+        if len(horse_master) > 0:
+            new_horses['encoded_id'] = [
+                i+max(horse_master['encoded_id']) for i in range(1, len(new_horses)+1)
+                ]
+        else: # まだ1行も登録されていない場合の処理
+            new_horses['encoded_id'] = [i for i in range(len(new_horses))]
         # 元のマスタと繋げる
         new_horse_master = pd.concat([horse_master, new_horses]).set_index('horse_id')['encoded_id']
         # マスタファイルを更新
@@ -88,15 +96,22 @@ class FeatureEngineering:
         jockey_idをラベルエンコーディングして、Categorical型に変換する。
         """
         csv_path = 'data/master/jockey_id.csv'
-        jockey_master = pd.read_csv(csv_path, dtype=object)
+        if not os.path.isfile(csv_path):
+            # ファイルが存在しない場合、空のDataFrameを作成
+            jockey_master = pd.DataFrame(columns=['jockey_id', 'encoded_id'])
+        else:
+            jockey_master = pd.read_csv(csv_path, dtype=object)
         # masterに存在しない、新しい騎手を抽出
         new_jockeys = self.__data[['jockey_id']][
             ~self.__data['jockey_id'].isin(jockey_master['jockey_id'])
             ].drop_duplicates(subset=['jockey_id'])
         # 新しい騎手を登録
-        new_jockeys['encoded_id'] = [
-            i+max(jockey_master['encoded_id']) for i in range(1, len(new_jockeys)+1)
-            ]
+        if len(jockey_master) > 0:
+            new_jockeys['encoded_id'] = [
+                i+max(jockey_master['encoded_id']) for i in range(1, len(new_jockeys)+1)
+                ]
+        else: # まだ1行も登録されていない場合の処理
+            new_jockeys['encoded_id'] = [i for i in range(len(new_jockeys))]
         # 元のマスタと繋げる
         new_jockey_master = pd.concat([jockey_master, new_jockeys]).set_index('jockey_id')['encoded_id']
         # マスタファイルを更新
