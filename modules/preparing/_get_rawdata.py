@@ -1,7 +1,10 @@
 import pandas as pd
+from sympy import im
 from tqdm.notebook import tqdm
 from bs4 import BeautifulSoup
 import re
+
+from modules.constants import LocalDirs
 
 def get_rawdata_results(html_path_list: list):
     """
@@ -170,3 +173,14 @@ def get_rawdata_peds(html_path_list: list):
     #pd.DataFrame型にして一つのデータにまとめる
     peds_df = pd.concat([peds[key] for key in peds], axis=1).T.add_prefix('peds_')
     return peds_df
+
+def update_rawdata(old_path: str, new_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    old_pathにrawテーブルのpickleファイルパスを指定し、new_dfに追加したいDataFrameを指定。
+    元々のテーブルにnew_dfが追加されてpickleファイルが更新される。
+    """
+    old_df = pd.read_pickle(old_path) #元々のテーブルを読み込み
+    #new_dfに存在しないindexのみ、旧データを使う
+    filtered_old = old_df[~old_df.index.isin(new_df.index)]
+    updated = pd.concat([filtered_old, new_df]) #結合
+    updated.to_pickle(old_path) #保存

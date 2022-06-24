@@ -68,7 +68,7 @@ def scrape_html_ped(horse_id_list: list, skip: bool = True):
             updated_html_path_list.append(filename)
     return updated_html_path_list
 
-def scrape_html_horse_with_updated_at(horse_id_list: list, skip: bool = True):
+def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
     """
     netkeiba.comのhorseページのhtmlをスクレイピングしてdata/html/horseに保存する関数。
     skip=Trueにすると、すでにhtmlが存在する場合はスキップされ、Falseにすると上書きされる。
@@ -76,6 +76,7 @@ def scrape_html_horse_with_updated_at(horse_id_list: list, skip: bool = True):
     また、horse_idごとに、最後にスクレイピングした日付を記録し、data/master/horse_results_updated_at.csvに保存する。
     """
     ### スクレイピング実行 ###
+    print('scraping')
     updated_html_path_list = scrape_html_horse(horse_id_list, skip)
     # パスから正規表現でhorse_id_listを取得
     horse_id_list = [
@@ -85,16 +86,20 @@ def scrape_html_horse_with_updated_at(horse_id_list: list, skip: bool = True):
     horse_id_df = pd.DataFrame({'horse_id': horse_id_list})
     
     ### 取得日マスタの更新 ###
+    print('updating master')
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') # 現在日時を取得
     # マスタのパス
     filename_master = os.path.join(LocalDirs.MASTER_DIR, 'horse_results_updated_at.csv')
     # ファイルが存在しない場合は、作成する
     if not os.path.isfile(filename_master):
         pd.DataFrame(columns=['horse_id', 'updated_at']).to_csv(filename_master, index=None)
-    # 旧マスタを読み込み、新たなhorse_idを追加
-    master = pd.read_csv(filename_master).merge(horse_id_df, how='outer')
+    # マスタを読み込み
+    master = pd.read_csv(filename_master, dtype=object)
+    # horse_id列に新しい馬を追加
+    new_master = master.merge(horse_id_df, on='horse_id', how='outer')
     # マスタ更新
-    master.loc[master['horse_id'].isin(horse_id_list), :] = now
-    master.to_csv(filename_master, index=None)
+    new_master.loc[new_master['horse_id'].isin(horse_id_list), 'updated_at'] = now
+    # 列が入れ替わってしまう場合があるので、修正しつつ保存
+    new_master[['horse_id', 'updated_at']].to_csv(filename_master, index=None)
     
 #TODO: scrape_html_horse_with_updated_atのテスト
