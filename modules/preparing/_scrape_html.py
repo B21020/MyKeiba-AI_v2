@@ -59,7 +59,6 @@ def scrape_html_ped(horse_id_list: list, skip: bool = True):
         filename = os.path.join(LocalDirs.HTML_PED_DIR, horse_id+'.bin') #保存するファイル名
         if skip and os.path.isfile(filename): #skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
             print('horse_id {} skipped'.format(horse_id))
-            continue
         else:
             url = UrlPaths.PED_URL + horse_id #horse_idからurlを作る
             time.sleep(1) #相手サーバーに負担をかけないように1秒待機する
