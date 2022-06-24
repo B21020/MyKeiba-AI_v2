@@ -21,3 +21,6 @@ class LocalDirs:
     RAW_RETURN_DIR: str = os.path.join(RAW_DIR, 'return_tables')
     RAW_HORSE_RESULTS_DIR: str = os.path.join(RAW_DIR, 'horse_results')
     RAW_PEDS_DIR: str = os.path.join(RAW_DIR, 'peds')
+    
+    ### masterディレクトリのパス
+    MASTER_DIR: str = os.path.join(DATA_DIR, 'master')
