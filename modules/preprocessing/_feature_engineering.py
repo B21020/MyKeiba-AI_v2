@@ -61,6 +61,39 @@ class FeatureEngineering:
         self.__data = pd.get_dummies(self.__data, columns=['性'])
         return self
     
+    def encode_target_id(self, target_id: str):
+        """
+        引数で指定されたID（horse_id/jockey_id）を
+        ラベルエンコーディングして、Categorical型に変換する。
+        """
+        csv_path = os.path.join(LocalPaths.MASTER_DIR, target_id + '.csv')
+        if not os.path.isfile(csv_path):
+            # ファイルが存在しない場合、空のDataFrameを作成
+            target_master = pd.DataFrame(columns=[target_id, 'encoded_id'])
+        else:
+            target_master = pd.read_csv(csv_path, dtype=object)
+            # 後のmaxでエラーになるので、整数に変換
+            target_master['encoded_id'] = target_master['encoded_id'].astype(int)
+
+        # masterに存在しない、新しい馬を抽出
+        new_target = self.__data[[target_id]][
+            ~self.__data[target_id].isin(target_master[target_id])
+            ].drop_duplicates(subset=[target_id])
+        # 新しい馬を登録
+        if len(target_master) > 0:
+            new_target['encoded_id'] = [
+                i+max(target_master['encoded_id']) for i in range(1, len(new_target)+1)
+                ]
+        else: # まだ1行も登録されていない場合の処理
+            new_target['encoded_id'] = [i for i in range(len(new_target))]
+        # 元のマスタと繋げる
+        new_target_master = pd.concat([target_master, new_target]).set_index(target_id)['encoded_id']
+        # マスタファイルを更新
+        new_target_master.to_csv(csv_path)
+        # ラベルエンコーディング実行
+        self.__data[target_id] = pd.Categorical(self.__data[target_id].map(new_target_master))
+        return
+    
     def encode_horse_id(self):
         """
         horse_idをラベルエンコーディングして、Categorical型に変換する。
