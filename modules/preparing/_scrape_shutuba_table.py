@@ -1,9 +1,13 @@
 import time
 import re
+from tkinter.tix import NoteBook
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from tqdm.notebook import tqdm
 
 from modules.constants import UrlPaths
 from modules.constants import ResultsCols as Cols
@@ -66,37 +70,20 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
         print(e)
         driver.close()
     df.to_pickle(file_path)
-
-def preprocess(self):
-    df = self.raw_data
-
-    # 性齢を性と年齢に分ける
-    df["性"] = df[Cols.SEX_AGE].map(lambda x: str(x)[0])
-    df["年齢"] = df[Cols.SEX_AGE].map(lambda x: str(x)[1:]).astype(int)
-
-    # 馬体重を体重と体重変化に分ける
-    df["体重"] = df[Cols.WEIGHT_AND_DIFF].str.split("(", expand=True)[0]
-    df["体重変化"] = df[Cols.WEIGHT_AND_DIFF].str.split("(", expand=True)[1].str[:-1]
     
-    #errors='coerce'で、"計不"など変換できない時に欠損値にする
-    df['体重'] = pd.to_numeric(df['体重'], errors='coerce')
-    df['体重変化'] = pd.to_numeric(df['体重変化'], errors='coerce')
-
-    # 単勝をfloatに変換
-    df[Cols.TANSHO_ODDS] = df[Cols.TANSHO_ODDS].astype(float)
-
-    # 不要な列を削除
-    df.drop([Cols.SEX_AGE, Cols.WEIGHT_AND_DIFF], axis=1, inplace=True)
-    
-    #6/6出走数追加
-    df['n_horses'] = df.index.map(df.index.value_counts())
-    
-    # 距離は10の位を切り捨てる
-    df["course_len"] = df["course_len"].astype(float) // 100
-    # 日付型に変更
-    df["date"] = pd.to_datetime(df["date"], format="%Y年%m月%d日")
-    # 開催場所
-    df['開催'] = df.index.map(lambda x:str(x)[4:6])
-    
-    self.preprocessed_data = df
-    return self
+def scrape_horse_id_list(race_id_list: list) -> list:
+    """
+    当日出走するhorse_id一覧を取得
+    """
+    print('sraping horse_id_list')
+    horse_id_list = []
+    for race_id in tqdm(race_id_list):
+        query = '?race_id=' + race_id
+        url = UrlPaths.SHUTUBA_TABLE + query
+        html = urlopen(url)
+        soup = BeautifulSoup(html, 'lxml', from_encoding='utf-8')
+        horse_td_list = soup.find_all("td", attrs={'class': 'HorseInfo'})
+        for td in horse_td_list:
+            horse_id = re.findall(r'\d+', td.find('a')['href'])[0]
+            horse_id_list.append(horse_id)
+    return horse_id_list
