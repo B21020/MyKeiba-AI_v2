@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 
 from modules.constants import UrlPaths
 
@@ -41,7 +42,11 @@ def scrape_race_id_list(kaisai_date_list: list, from_shutuba=False, waiting_time
     ChromeDriverは要素を取得し終わらないうちに先に進んでしまうことがあるので、その場合の待機時間をwaiting_timeで指定。
     """
     race_id_list = []
-    driver = webdriver.Chrome()
+    options = Options()
+    options.add_argument('--headless') #ヘッドレスモード（ブラウザが立ち上がらない）
+    driver = webdriver.Chrome(options=options)
+    #画面サイズをなるべく小さくし、余計な画像などを読み込まないようにする
+    driver.set_window_size(8, 8)
     print('getting race_id_list')
     for kaisai_date in tqdm(kaisai_date_list):
         try:

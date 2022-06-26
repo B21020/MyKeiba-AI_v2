@@ -5,8 +5,8 @@ from modules.constants import ResultsCols as Cols
 
 
 class ResultsProcessor(AbstractDataProcessor):
-    def __init__(self, path_list):
-        super().__init__(path_list)
+    def __init__(self, filepath):
+        super().__init__(filepath)
     
     def _preprocess(self):
         df = self.raw_data.copy()

@@ -1,7 +1,11 @@
+import os
 import pandas as pd
+from sympy import im
 from tqdm.notebook import tqdm
 from bs4 import BeautifulSoup
 import re
+
+from modules.constants import LocalPaths
 
 def get_rawdata_results(html_path_list: list):
     """
@@ -36,7 +40,7 @@ def get_rawdata_results(html_path_list: list):
                 df["jockey_id"] = jockey_id_list
 
                 #インデックスをrace_idにする
-                race_id = re.findall('(?<=race/)\d+', html_path)[0]
+                race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
 
                 race_results[race_id] = df
@@ -83,7 +87,7 @@ def get_rawdata_info(html_path_list: list):
                         df["date"] = [text]
                 
                 #インデックスをrace_idにする
-                race_id = re.findall('(?<=race/)\d+', html_path)[0]
+                race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
 
                 race_infos[race_id] = df
@@ -112,7 +116,7 @@ def get_rawdata_return(html_path_list: list):
                 #dfsの1番目に単勝〜馬連、2番目にワイド〜三連単がある
                 df = pd.concat([dfs[1], dfs[2]])
                 
-                race_id = re.findall('(?<=race/)\d+', html_path)[0]
+                race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
                 horse_results[race_id] = df
             except Exception as e:
@@ -137,7 +141,7 @@ def get_rawdata_horse_results(html_path_list: list):
             if df.columns[0]=='受賞歴':
                 df = pd.read_html(html)[4]
                 
-            horse_id = re.findall('(?<=horse/)\d+', html_path)[0]
+            horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
             
             df.index = [horse_id] * len(df)
             horse_results[horse_id] = df
@@ -160,7 +164,7 @@ def get_rawdata_peds(html_path_list: list):
 
             #重複を削除して1列のSeries型データに直す
             generations = {}
-            horse_id = re.findall('(?<=ped/)\d+', html_path)[0]
+            horse_id = re.findall('ped\W(\d+).bin', html_path)[0]
             for i in reversed(range(5)):
                 generations[i] = df[i]
                 df.drop([i], axis=1, inplace=True)
@@ -170,3 +174,19 @@ def get_rawdata_peds(html_path_list: list):
     #pd.DataFrame型にして一つのデータにまとめる
     peds_df = pd.concat([peds[key] for key in peds], axis=1).T.add_prefix('peds_')
     return peds_df
+
+def update_rawdata(filepath: str, new_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    filepathにrawテーブルのpickleファイルパスを指定し、new_dfに追加したいDataFrameを指定。
+    元々のテーブルにnew_dfが追加されてpickleファイルが更新される。
+    pickleファイルが存在しない場合は、filepathに新たに作成される。
+    """
+    if os.path.isfile(filepath): #pickleファイルが存在する場合の更新処理
+        filedf = pd.read_pickle(filepath) #元々のテーブルを読み込み
+        #new_dfに存在しないindexのみ、旧データを使う
+        filtered_old = filedf[~filedf.index.isin(new_df.index)]
+        updated = pd.concat([filtered_old, new_df]) #結合
+        #TODO: 間違ったデータを結合してしまった時の処理と、結合データがない場合の処理
+        updated.to_pickle(filepath) #保存
+    else: #pickleファイルが存在しない場合、新たに作成
+        new_df.to_pickle(filepath)

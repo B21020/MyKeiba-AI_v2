@@ -2,7 +2,7 @@ import os
 import dataclasses
 
 @dataclasses.dataclass(frozen=True)
-class LocalDirs:
+class LocalPaths:
     # パス
     ## プロジェクトルートの絶対パス
     BASE_DIR: str = os.path.abspath('./')
@@ -16,11 +16,11 @@ class LocalDirs:
     
     ### rawディレクトリのパス
     RAW_DIR: str = os.path.join(DATA_DIR, 'raw')
-    RAW_RESULTS_DIR: str = os.path.join(RAW_DIR, 'results')
-    RAW_RACE_INFO_DIR: str = os.path.join(RAW_DIR, 'race_info')
-    RAW_RETURN_DIR: str = os.path.join(RAW_DIR, 'return_tables')
-    RAW_HORSE_RESULTS_DIR: str = os.path.join(RAW_DIR, 'horse_results')
-    RAW_PEDS_DIR: str = os.path.join(RAW_DIR, 'peds')
-        
+    RAW_RESULTS_PATH: str = os.path.join(RAW_DIR, 'results.pickle')
+    RAW_RACE_INFO_PATH: str = os.path.join(RAW_DIR, 'race_info.pickle')
+    RAW_RETURN_TABLES_PATH: str = os.path.join(RAW_DIR, 'return_tables.pickle')
+    RAW_HORSE_RESULTS_PATH: str = os.path.join(RAW_DIR, 'horse_results.pickle')
+    RAW_PEDS_PATH: str = os.path.join(RAW_DIR, 'peds.pickle')
+    
     ### masterディレクトリのパス
     MASTER_DIR: str = os.path.join(DATA_DIR, 'master')

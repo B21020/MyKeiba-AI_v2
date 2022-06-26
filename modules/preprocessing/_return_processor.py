@@ -2,8 +2,8 @@ import pandas as pd
 from ._abstract_data_processor import AbstractDataProcessor
 
 class ReturnProcessor(AbstractDataProcessor):
-    def __init__(self, path_list):
-        super().__init__(path_list)
+    def __init__(self, filepath):
+        super().__init__(filepath)
     
     def _preprocess(self):
         return_dict = {}

@@ -3,6 +3,7 @@ import re
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 
 from modules.constants import UrlPaths
 from modules.constants import ResultsCols as Cols
@@ -12,7 +13,11 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     当日の出馬表をスクレイピング。
     dateはyyyy/mm/ddの形式。
     """
-    driver = webdriver.Chrome()
+    options = Options()
+    options.add_argument('--headless') #ヘッドレスモード（ブラウザが立ち上がらない）
+    driver = webdriver.Chrome(options=options)
+    #画面サイズをなるべく小さくし、余計な画像などを読み込まないようにする
+    driver.set_window_size(8, 8)
     query = '?race_id=' + race_id
     url = UrlPaths.SHUTUBA_TABLE + query
     df = pd.DataFrame()
