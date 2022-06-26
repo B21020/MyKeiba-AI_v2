@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 from ._data_merger import DataMerger
-from modules.constants import LocalDirs, HorseResultsCols, Master
+from modules.constants import LocalPaths, HorseResultsCols, Master
 
 class FeatureEngineering:
     """
@@ -65,12 +65,14 @@ class FeatureEngineering:
         """
         horse_idをラベルエンコーディングして、Categorical型に変換する。
         """
-        csv_path = os.path.join(LocalDirs.MASTER_DIR, 'horse_id.csv')
+        csv_path = os.path.join(LocalPaths.MASTER_DIR, 'horse_id.csv')
         if not os.path.isfile(csv_path):
             # ファイルが存在しない場合、空のDataFrameを作成
             horse_master = pd.DataFrame(columns=['horse_id', 'encoded_id'])
         else:
             horse_master = pd.read_csv(csv_path, dtype=object)
+            #後のmaxでエラーになるので、整数に変換
+            horse_master['encoded_id'] = horse_master['encoded_id'].astype(int)
         # masterに存在しない、新しい馬を抽出
         new_horses = self.__data[['horse_id']][
             ~self.__data['horse_id'].isin(horse_master['horse_id'])
@@ -94,12 +96,14 @@ class FeatureEngineering:
         """
         jockey_idをラベルエンコーディングして、Categorical型に変換する。
         """
-        csv_path = os.path.join(LocalDirs.MASTER_DIR, 'jockey_id.csv')
+        csv_path = os.path.join(LocalPaths.MASTER_DIR, 'jockey_id.csv')
         if not os.path.isfile(csv_path):
             # ファイルが存在しない場合、空のDataFrameを作成
             jockey_master = pd.DataFrame(columns=['jockey_id', 'encoded_id'])
         else:
             jockey_master = pd.read_csv(csv_path, dtype=object)
+            #後のmaxでエラーになるので、整数に変換
+            jockey_master['encoded_id'] = jockey_master['encoded_id'].astype(int)
         # masterに存在しない、新しい騎手を抽出
         new_jockeys = self.__data[['jockey_id']][
             ~self.__data['jockey_id'].isin(jockey_master['jockey_id'])
