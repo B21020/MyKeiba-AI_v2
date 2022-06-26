@@ -4,8 +4,8 @@ from ._results_processor import ResultsProcessor
 from modules.constants import ResultsCols as Cols
 
 class ShutubaTableProcessor(ResultsProcessor):
-    def __init__(self, file_path: str):
-        super().__init__([file_path])
+    def __init__(self, filepath: str):
+        super().__init__(filepath)
 
     def _preprocess(self):
         df = super()._preprocess()
