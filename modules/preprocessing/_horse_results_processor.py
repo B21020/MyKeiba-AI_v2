@@ -7,8 +7,8 @@ from modules.constants import HorseResultsCols as Cols
 
 
 class HorseResultsProcessor(AbstractDataProcessor):
-    def __init__(self, path_list):
-        super().__init__(path_list)
+    def __init__(self, filepath):
+        super().__init__(filepath)
     
     def _preprocess(self):
         df = self.raw_data

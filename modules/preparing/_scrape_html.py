@@ -6,7 +6,7 @@ import os
 from tqdm.notebook import tqdm
 from urllib.request import urlopen
 
-from modules.constants import UrlPaths, LocalDirs
+from modules.constants import UrlPaths, LocalPaths
 
 def scrape_html_race(race_id_list: list, skip: bool = True):
     """
@@ -16,7 +16,7 @@ def scrape_html_race(race_id_list: list, skip: bool = True):
     """
     updated_html_path_list = []
     for race_id in tqdm(race_id_list):
-        filename = os.path.join(LocalDirs.HTML_RACE_DIR, race_id+'.bin') #保存するファイル名
+        filename = os.path.join(LocalPaths.HTML_RACE_DIR, race_id+'.bin') #保存するファイル名
         if skip and os.path.isfile(filename): #skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
             print('race_id {} skipped'.format(race_id))
         else:
@@ -36,7 +36,7 @@ def scrape_html_horse(horse_id_list: list, skip: bool = True):
     """
     updated_html_path_list = []
     for horse_id in tqdm(horse_id_list):
-        filename = os.path.join(LocalDirs.HTML_HORSE_DIR, horse_id+'.bin') #保存するファイル名
+        filename = os.path.join(LocalPaths.HTML_HORSE_DIR, horse_id+'.bin') #保存するファイル名
         if skip and os.path.isfile(filename): #skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
             print('horse_id {} skipped'.format(horse_id))
         else:
@@ -56,7 +56,7 @@ def scrape_html_ped(horse_id_list: list, skip: bool = True):
     """
     updated_html_path_list = []
     for horse_id in tqdm(horse_id_list):
-        filename = os.path.join(LocalDirs.HTML_PED_DIR, horse_id+'.bin') #保存するファイル名
+        filename = os.path.join(LocalPaths.HTML_PED_DIR, horse_id+'.bin') #保存するファイル名
         if skip and os.path.isfile(filename): #skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
             print('horse_id {} skipped'.format(horse_id))
         else:
@@ -89,7 +89,7 @@ def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
     print('updating master')
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') # 現在日時を取得
     # マスタのパス
-    filename_master = os.path.join(LocalDirs.MASTER_DIR, 'horse_results_updated_at.csv')
+    filename_master = os.path.join(LocalPaths.MASTER_DIR, 'horse_results_updated_at.csv')
     # ファイルが存在しない場合は、作成する
     if not os.path.isfile(filename_master):
         pd.DataFrame(columns=['horse_id', 'updated_at']).to_csv(filename_master, index=None)
@@ -101,5 +101,6 @@ def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
     new_master.loc[new_master['horse_id'].isin(horse_id_list), 'updated_at'] = now
     # 列が入れ替わってしまう場合があるので、修正しつつ保存
     new_master[['horse_id', 'updated_at']].to_csv(filename_master, index=None)
+    return updated_html_path_list
     
 #TODO: scrape_html_horse_with_updated_atのテスト

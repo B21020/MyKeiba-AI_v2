@@ -5,7 +5,7 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from tqdm.notebook import tqdm
 
-from modules.constants import UrlPaths, LocalDirs
+from modules.constants import UrlPaths, LocalPaths
 from modules import preparing
 
 class UpdateHorse:
@@ -15,10 +15,10 @@ class UpdateHorse:
     def __init__(self) -> None:
         today = datetime.date.today().strftime('%Y%m%d')
         self.horse_results_path = os.path.join(
-            LocalDirs.RAW_HORSE_RESULTS_DIR, 'horse_results_'+today+'.pickle'
+            LocalPaths.RAW_HORSE_RESULTS_DIR, 'horse_results_'+today+'.pickle'
             )
         self.peds_path = os.path.join(
-            LocalDirs.RAW_PEDS_DIR, 'peds_'+today+'.pickle'
+            LocalPaths.RAW_PEDS_DIR, 'peds_'+today+'.pickle'
             )
     
     def scrape_horse_id_list(self, race_id_list: list) -> list:
