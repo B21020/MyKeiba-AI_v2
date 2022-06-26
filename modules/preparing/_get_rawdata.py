@@ -186,7 +186,7 @@ def update_rawdata(filepath: str, new_df: pd.DataFrame) -> pd.DataFrame:
         #new_dfに存在しないindexのみ、旧データを使う
         filtered_old = filedf[~filedf.index.isin(new_df.index)]
         updated = pd.concat([filtered_old, new_df]) #結合
-        #TODO: 間違ったデータを結合してしまった時の処理
+        #TODO: 間違ったデータを結合してしまった時の処理と、結合データがない場合の処理
         updated.to_pickle(filepath) #保存
     else: #pickleファイルが存在しない場合、新たに作成
         new_df.to_pickle(filepath)
