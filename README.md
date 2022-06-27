@@ -14,7 +14,8 @@ main.ipynbが実行するnotebookとなります。
 
 # データフロー図(作成中)
 ## 全体図
-![DFD drawio](https://user-images.githubusercontent.com/59597959/172866720-6c945291-7e09-414e-8310-ed0cb776d891.png)
+![DFD drawio](images/DFD.drawio.png)
 
-## スクレイピング
-![DFD-scraping drawio](https://user-images.githubusercontent.com/59597959/173863609-03924cda-f916-4e5e-aacb-096baa8fc0a2.png)
+## preparing
+スクレイピング部分の処理詳細
+![DFD_preparing drawio](images/DFD_preparing.drawio.png)
