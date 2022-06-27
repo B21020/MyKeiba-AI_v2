@@ -19,7 +19,7 @@ def get_rawdata_results(html_path_list: list):
                 html = f.read() #保存してあるbinファイルを読み込む
                 df = pd.read_html(html)[0] #メインとなるレース結果テーブルデータを取得
                 
-                soup = BeautifulSoup(html, "html.parser") #htmlをsoupオブジェクトに変換
+                soup = BeautifulSoup(html, "lxml") #htmlをsoupオブジェクトに変換
 
                 #馬ID、騎手IDをスクレイピング
                 horse_id_list = []
@@ -63,7 +63,7 @@ def get_rawdata_info(html_path_list: list):
             try:
                 html = f.read() #保存してあるbinファイルを読み込む
                 
-                soup = BeautifulSoup(html, "html.parser") #htmlをsoupオブジェクトに変換
+                soup = BeautifulSoup(html, "lxml") #htmlをsoupオブジェクトに変換
 
                 #天候、レースの種類、コースの長さ、馬場の状態、日付をスクレイピング
                 texts = (
