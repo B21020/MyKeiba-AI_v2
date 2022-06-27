@@ -92,7 +92,7 @@ class FeatureEngineering:
         new_target_master.to_csv(csv_path)
         # ラベルエンコーディング実行
         self.__data[target_id] = pd.Categorical(self.__data[target_id].map(new_target_master))
-        return
+        return self
     
     def encode_horse_id(self):
         """
