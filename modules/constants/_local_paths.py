@@ -7,7 +7,7 @@ class LocalPaths:
     ## プロジェクトルートの絶対パス
     BASE_DIR: str = os.path.abspath('./')
     ## dataディレクトリまでの絶対パス
-    DATA_DIR: str = os.path.join(os.path.abspath('./'),'data')
+    DATA_DIR: str = os.path.join(BASE_DIR, 'data')
     ### HTMLディレクトリのパス
     HTML_DIR: str = os.path.join(DATA_DIR, 'html')
     HTML_RACE_DIR: str = os.path.join(HTML_DIR, 'race')
