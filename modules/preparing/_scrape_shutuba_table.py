@@ -21,7 +21,7 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     options.add_argument('--headless') #ヘッドレスモード（ブラウザが立ち上がらない）
     driver = webdriver.Chrome(options=options)
     #画面サイズをなるべく小さくし、余計な画像などを読み込まないようにする
-    driver.set_window_size(8, 8)
+    driver.set_window_size(50, 50)
     query = '?race_id=' + race_id
     url = UrlPaths.SHUTUBA_TABLE + query
     df = pd.DataFrame()
