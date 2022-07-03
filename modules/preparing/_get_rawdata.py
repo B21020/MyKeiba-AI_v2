@@ -155,24 +155,14 @@ def get_rawdata_peds(html_path_list: list):
     horse/pedページのhtmlを受け取って、血統のDataFrameに変換する関数。
     """
     print('preparing raw peds table')
-    # horse_idを退避
-    horse_id_list = []
     peds = {}
     for html_path in tqdm(html_path_list):
         with open(html_path, 'rb') as f:
             # 保存してあるbinファイルを読み込む
             html = f.read()
-            
-            df = pd.read_html(html)[0]
 
-            # 重複を削除して1列のSeries型データに直す
-            generations = {}
-            
             # horse_idを取得
             horse_id = re.findall('ped\W(\d+).bin', html_path)[0]
-
-            # horse_idをリストに退避
-            horse_id_list.append(horse_id)
 
             # htmlをsoupオブジェクトに変換
             soup = BeautifulSoup(html, "lxml")
@@ -185,15 +175,13 @@ def get_rawdata_peds(html_path_list: list):
 
             for a in horse_a_list:
                 # 血統データのhorse_idを抜き出す
-                work_horse_id = re.findall('horse\W(\w{10})', a["href"])[0]
-                peds_id_list.append(work_horse_id)
-            
-            peds[horse_id] = pd.DataFrame(peds_id_list)
+                work_peds_id = re.findall('horse\W(\w{10})', a["href"])[0]
+                peds_id_list.append(work_peds_id)
+
+            peds[horse_id] = peds_id_list
 
     # pd.DataFrame型にして一つのデータにまとめて、列と行の入れ替えして、列名をpeds_0, ..., peds_61にする
-    peds_df = pd.concat([peds[key] for key in peds], axis=1).T.add_prefix('peds_')
-
-    peds_df.index = horse_id_list
+    peds_df = pd.DataFrame.from_dict(peds, orient='index').add_prefix('peds_')
 
     return peds_df
 
