@@ -5,7 +5,7 @@ from tqdm.notebook import tqdm
 from bs4 import BeautifulSoup
 import re
 
-from modules.constants import LocalPaths
+from modules.constants import Master
 
 def get_rawdata_results(html_path_list: list):
     """
@@ -61,32 +61,67 @@ def get_rawdata_info(html_path_list: list):
     for html_path in tqdm(html_path_list):
         with open(html_path, 'rb') as f:
             try:
-                html = f.read() #保存してあるbinファイルを読み込む
+                # 保存してあるbinファイルを読み込む
+                html = f.read()
                 
-                soup = BeautifulSoup(html, "lxml") #htmlをsoupオブジェクトに変換
+                # htmlをsoupオブジェクトに変換
+                soup = BeautifulSoup(html, "lxml")
 
-                #天候、レースの種類、コースの長さ、馬場の状態、日付をスクレイピング
+                # 天候、レースの種類、コースの長さ、馬場の状態、日付、回り、レースクラスをスクレイピング
                 texts = (
                     soup.find("div", attrs={"class": "data_intro"}).find_all("p")[0].text
                     + soup.find("div", attrs={"class": "data_intro"}).find_all("p")[1].text
                 )
                 info = re.findall(r'\w+', texts)
                 df = pd.DataFrame()
+                # 障害レースフラグを初期化
+                hurdle_race_flg = False
                 for text in info:
                     if text in ["芝", "ダート"]:
                         df["race_type"] = [text]
                     if "障" in text:
                         df["race_type"] = ["障害"]
+                        hurdle_race_flg = True      
                     if "m" in text:
-                        df["course_len"] = [int(re.findall(r"\d+", text)[-1])] #20211212：[0]→[-1]に修正
-                    if text in ["良", "稍重", "重", "不良"]:
+                        # 20211212：[0]→[-1]に修正
+                        df["course_len"] = [int(re.findall(r"\d+", text)[-1])]
+                    if text in Master.GROUND_STATE_LIST:
                         df["ground_state"] = [text]
-                    if text in ["曇", "晴", "雨", "小雨", "小雪", "雪"]:
+                    if text in Master.WEATHER_LIST:
                         df["weather"] = [text]
                     if "年" in text:
                         df["date"] = [text]
-                
-                #インデックスをrace_idにする
+                    if "右" in text:
+                        df["around"] = Master.AROUND_LIST[0]
+                    if "左" in text:
+                        df["around"] = Master.AROUND_LIST[1]
+                    if "直線" in text:
+                        df["around"] = Master.AROUND_LIST[2]
+                    if "新馬" in text:
+                        df["race_class"] = Master.RACE_CLASS_LIST[0]
+                    if "未勝利" in text:
+                        df["race_class"] = Master.RACE_CLASS_LIST[1]
+                    if "1勝クラス" in text:
+                        df["race_class"] = Master.RACE_CLASS_LIST[2]
+                    if "2勝クラス" in text:
+                        df["race_class"] = Master.RACE_CLASS_LIST[3]
+                    if "3勝クラス" in text:
+                        df["race_class"] = Master.RACE_CLASS_LIST[4]
+                    if "オープン" in text:
+                        df["race_class"] = Master.RACE_CLASS_LIST[5]
+                    if "500万下" in text:
+                        df["race_class"] = Master.RACE_CLASS_LIST[2]
+                    if "1000万下" in text:
+                        df["race_class"] = Master.RACE_CLASS_LIST[3]
+                    if "1600万下" in text:
+                        df["race_class"] = Master.RACE_CLASS_LIST[4]
+
+                # 障害レースの場合
+                if hurdle_race_flg:
+                    df["around"] = Master.AROUND_LIST[3]
+                    df["race_class"] = Master.RACE_CLASS_LIST[6]
+
+                # インデックスをrace_idにする
                 race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
 
@@ -94,7 +129,7 @@ def get_rawdata_info(html_path_list: list):
             except Exception as e:
                 print('error at {}'.format(html_path))
                 print(e)
-    #pd.DataFrame型にして一つのデータにまとめる
+    # pd.DataFrame型にして一つのデータにまとめる
     race_infos_df = pd.concat([race_infos[key] for key in race_infos])
 
     return race_infos_df

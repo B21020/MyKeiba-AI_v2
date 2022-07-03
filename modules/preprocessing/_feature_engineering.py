@@ -114,3 +114,19 @@ class FeatureEngineering:
             )
         self.__data = pd.get_dummies(self.__data, columns=[HorseResultsCols.PLACE])
         return self
+
+    def dumminize_around(self):
+        """
+        aroundカラムをダミー変数化する
+        """
+        self.__data['around'] = pd.Categorical(self.__data['around'], Master.AROUND_LIST)
+        self.__data = pd.get_dummies(self.__data, columns=['around'])
+        return self
+
+    def dumminize_race_class(self):
+        """
+        race_classカラムをダミー変数化する
+        """
+        self.__data['race_class'] = pd.Categorical(self.__data['race_class'], Master.RACE_CLASS_LIST)
+        self.__data = pd.get_dummies(self.__data, columns=['race_class'])
+        return self
