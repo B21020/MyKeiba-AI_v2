@@ -75,11 +75,11 @@ class FeatureEngineering:
             # 後のmaxでエラーになるので、整数に変換
             target_master['encoded_id'] = target_master['encoded_id'].astype(float)
 
-        # masterに存在しない、新しい馬を抽出
+        # masterに存在しない、新しい情報を抽出
         new_target = self.__data[[target_col]][
             ~self.__data[target_col].isin(target_master[target_col])
             ].drop_duplicates(subset=[target_col])
-        # 新しい馬を登録
+        # 新しい情報を登録
         if len(target_master) > 0:
             new_target['encoded_id'] = [
                 i+max(target_master['encoded_id']) for i in range(1, len(new_target)+1)
