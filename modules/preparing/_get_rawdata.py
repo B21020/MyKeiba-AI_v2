@@ -101,20 +101,14 @@ def get_rawdata_info(html_path_list: list):
                         df["race_class"] = Master.RACE_CLASS_LIST[0]
                     if "未勝利" in text:
                         df["race_class"] = Master.RACE_CLASS_LIST[1]
-                    if "1勝クラス" in text:
+                    if ("1勝クラス" in text) or ("500万下" in text):
                         df["race_class"] = Master.RACE_CLASS_LIST[2]
-                    if "2勝クラス" in text:
+                    if ("2勝クラス" in text) or ("1000万下" in text):
                         df["race_class"] = Master.RACE_CLASS_LIST[3]
-                    if "3勝クラス" in text:
+                    if ("3勝クラス" in text) or ("1600万下" in text):
                         df["race_class"] = Master.RACE_CLASS_LIST[4]
                     if "オープン" in text:
                         df["race_class"] = Master.RACE_CLASS_LIST[5]
-                    if "500万下" in text:
-                        df["race_class"] = Master.RACE_CLASS_LIST[2]
-                    if "1000万下" in text:
-                        df["race_class"] = Master.RACE_CLASS_LIST[3]
-                    if "1600万下" in text:
-                        df["race_class"] = Master.RACE_CLASS_LIST[4]
 
                 # 障害レースの場合
                 if hurdle_race_flg:
