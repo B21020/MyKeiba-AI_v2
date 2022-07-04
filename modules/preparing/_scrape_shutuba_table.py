@@ -29,7 +29,7 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
         driver.get(url)
         time.sleep(1)
         
-        #メインのテーブルの取得
+        # メインのテーブルの取得
         for tr in driver.find_elements(By.CLASS_NAME, 'HorseList'):
             row = []
             for td in tr.find_elements(By.TAG_NAME, 'td'):
@@ -39,32 +39,59 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
                 row.append(td.text)
             df = df.append(pd.Series(row), ignore_index=True)
             
-        #レース結果テーブルと列を揃える
+        # レース結果テーブルと列を揃える
         df = df[[0, 1, 5, 6, 11, 12, 10, 3, 7]]
         df.columns = [Cols.WAKUBAN, Cols.UMABAN, Cols.SEX_AGE, Cols.KINRYO, Cols.TANSHO_ODDS, Cols.POPULARITY, Cols.WEIGHT_AND_DIFF, 'horse_id', 'jockey_id']
         df.index = [race_id] * len(df)
         
-        #レース情報の取得
+        # レース情報の取得
         texts = driver.find_element(By.CLASS_NAME, 'RaceList_Item02').text
         texts = re.findall(r'\w+', texts)
+        # 障害レースフラグを初期化
+        hurdle_race_flg = False
         for text in texts:
             if 'm' in text:
-                df['course_len'] = [int(re.findall(r'\d+', text)[-1])] * len(df) #20211212：[0]→[-1]に修正
-            if text in ["曇", "晴", "雨", "小雨", "小雪", "雪"]:
+                # 20211212：[0]→[-1]に修正
+                df['course_len'] = [int(re.findall(r'\d+', text)[-1])] * len(df)
+            if text in Master.WEATHER_LIST:
                 df["weather"] = [text] * len(df)
-            if text in ["良", "稍重", "重"]:
+            if text in Master.GROUND_STATE_LIST:
                 df["ground_state"] = [text] * len(df)
-            if '不' in text:
-                df["ground_state"] = ['不良'] * len(df)
-            # 2020/12/13追加
             if '稍' in text:
-                df["ground_state"] = ['稍重'] * len(df)
+                df["ground_state"] = Master.GROUND_STATE_LIST[1] * len(df)
+            if '不' in text:
+                df["ground_state"] = Master.GROUND_STATE_LIST[3] * len(df)
             if '芝' in text:
-                df['race_type'] = ['芝'] * len(df)
-            if '障' in text:
-                df['race_type'] = ['障害'] * len(df)
+                df['race_type'] = list(Master.RACE_TYPE_DICT.values())[0] * len(df)
             if 'ダ' in text:
-                df['race_type'] = ['ダート'] * len(df)
+                df['race_type'] = list(Master.RACE_TYPE_DICT.values())[1] * len(df)
+            if '障' in text:
+                df['race_type'] = list(Master.RACE_TYPE_DICT.values())[2] * len(df)
+                hurdle_race_flg = True
+            if "右" in text:
+                df["around"] = Master.AROUND_LIST[0] * len(df)
+            if "左" in text:
+                df["around"] = Master.AROUND_LIST[1] * len(df)
+            if "直線" in text:
+                df["around"] = Master.AROUND_LIST[2] * len(df)
+            if "新馬" in text:
+                df["race_class"] = Master.RACE_CLASS_LIST[0] * len(df)
+            if "未勝利" in text:
+                df["race_class"] = Master.RACE_CLASS_LIST[1] * len(df)
+            if "１勝クラス" in text:
+                df["race_class"] = Master.RACE_CLASS_LIST[2] * len(df)
+            if "２勝クラス" in text:
+                df["race_class"] = Master.RACE_CLASS_LIST[3] * len(df)
+            if "３勝クラス" in text:
+                df["race_class"] = Master.RACE_CLASS_LIST[4] * len(df)
+            if "オープン" in text:
+                df["race_class"] = Master.RACE_CLASS_LIST[5] * len(df)
+
+        # 障害レースの場合
+        if hurdle_race_flg:
+            df["around"] = Master.AROUND_LIST[3] * len(df)
+            df["race_class"] = Master.RACE_CLASS_LIST[6] * len(df)
+
         df['date'] = [date] * len(df)
     except Exception as e:
         print(e)
