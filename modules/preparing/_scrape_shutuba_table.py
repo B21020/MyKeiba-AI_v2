@@ -12,6 +12,8 @@ from tqdm.notebook import tqdm
 from modules.constants import UrlPaths
 from modules.constants import ResultsCols as Cols
 
+from modules.constants import Master
+
 def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     """
     当日の出馬表をスクレイピング。
