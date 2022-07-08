@@ -44,9 +44,10 @@ class HorseResultsProcessor(AbstractDataProcessor):
         df['first_to_rank'] = df['first_corner'] - df[Cols.RANK]
         df['first_to_final'] = df['first_corner'] - df['final_corner']
         
-        #開催場所
-        df[Cols.PLACE] = df[Cols.PLACE].str.extract(r'(\D+)')[0].map(Master.PLACE_DICT).fillna('11')
-        #race_type
+        # 開催場所（数字以外の文字列を抽出）中央開催・地方開催・海外開催以外をその他（'99'）とする
+        df[Cols.PLACE] = df[Cols.PLACE].str.extract(r'(\D+)')[0].map(Master.PLACE_DICT).fillna('99')
+        
+        # race_type（数字以外の文字列を抽出）
         df['race_type'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\D+)')[0].map(Master.RACE_TYPE_DICT)
         #距離は10の位を切り捨てる
         df['course_len'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\d+)').astype(int) // 100
