@@ -72,8 +72,9 @@ class FeatureEngineering:
             target_master = pd.DataFrame(columns=[target_col, 'encoded_id'])
         else:
             target_master = pd.read_csv(csv_path, dtype=object)
-            # 後のmaxでエラーになるので、整数に変換
-            target_master['encoded_id'] = target_master['encoded_id'].astype(float)
+
+        # 後のmaxでエラーになるので、整数に変換
+        target_master['encoded_id'] = target_master['encoded_id'].astype(float)
 
         # masterに存在しない、新しい情報を抽出
         new_target = self.__data[[target_col]][
