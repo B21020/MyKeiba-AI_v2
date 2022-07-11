@@ -17,9 +17,25 @@ class ShutubaTableProcessor(ResultsProcessor):
         return raw
     
     def _select_columns(self, raw):
-        df = raw.copy()[[
-            Cols.WAKUBAN, Cols.UMABAN, Cols.KINRYO, Cols.TANSHO_ODDS, 'horse_id','jockey_id','性', '年齢',
-            '体重','体重変化','n_horses','course_len','weather','race_type','ground_state','date'
+        df = raw.copy()[[\
+            Cols.WAKUBAN, #枠番
+            Cols.UMABAN, #馬番
+            Cols.KINRYO, #斤量
+            Cols.TANSHO_ODDS, #単勝
+            'horse_id',
+            'jockey_id',
+            '性',
+            '年齢',
+            '体重',
+            '体重変化',
+            'n_horses',
+            'course_len',
+            'weather',
+            'race_type',
+            'ground_state',
+            'date',
+            'around',
+            'race_class'
             ]]
         return df
 
