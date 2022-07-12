@@ -9,7 +9,14 @@ class ShutubaTableProcessor(ResultsProcessor):
 
     def _preprocess(self):
         df = super()._preprocess()
+        
+        # 距離は10の位を切り捨てる
+        df["course_len"] = df["course_len"].astype(float) // 100
+        
+        # 開催場所
         df['開催'] = df.index.map(lambda x:str(x)[4:6])
+        
+        # 日付型に変更
         df["date"] = pd.to_datetime(df["date"])
         return df
     
