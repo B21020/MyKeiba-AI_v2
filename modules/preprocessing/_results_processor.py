@@ -6,11 +6,18 @@ from modules.constants import ResultsCols as Cols
 
 class ResultsProcessor(AbstractDataProcessor):
     def __init__(self, filepath):
+        """
+        初期処理
+        """
         super().__init__(filepath)
     
     def _preprocess(self):
+        """
+        前処理
+        """
         df = self.raw_data.copy()
         
+        # 着順の前処理
         df = self._preprocess_rank(df)
         
         # 性齢を性と年齢に分ける
@@ -22,7 +29,7 @@ class ResultsProcessor(AbstractDataProcessor):
         df["体重"] = df[Cols.WEIGHT_AND_DIFF].str.split("(", expand=True)[0]
         df["体重変化"] = df[Cols.WEIGHT_AND_DIFF].str.split("(", expand=True)[1].str[:-1]
         
-        #errors='coerce'で、"計不"など変換できない時に欠損値にする
+        # errors='coerce'で、"計不"など変換できない時に欠損値にする
         df['体重'] = pd.to_numeric(df['体重'], errors='coerce')
         df['体重変化'] = pd.to_numeric(df['体重変化'], errors='coerce')
 
@@ -32,7 +39,7 @@ class ResultsProcessor(AbstractDataProcessor):
         df[Cols.WAKUBAN] = df[Cols.WAKUBAN].astype(int)
         df[Cols.UMABAN] = df[Cols.UMABAN].astype(int)
         
-        #6/6出走数追加
+        # 6/6出走数追加
         df['n_horses'] = df.index.map(df.index.value_counts())
         
         df = self._select_columns(df)
@@ -41,6 +48,9 @@ class ResultsProcessor(AbstractDataProcessor):
         
         
     def _preprocess_rank(self, raw):
+        """
+        着順の前処理
+        """
         df = raw.copy()
         # 着順に数字以外の文字列が含まれているものを取り除く
         df[Cols.RANK] = pd.to_numeric(df[Cols.RANK], errors='coerce')
@@ -50,8 +60,21 @@ class ResultsProcessor(AbstractDataProcessor):
         return df
     
     def _select_columns(self, raw):
+        """
+        カラム抽出
+        """
         df = raw.copy()[[
-            Cols.WAKUBAN,Cols.UMABAN,Cols.KINRYO,Cols.TANSHO_ODDS,'horse_id','jockey_id',
-            '性', '年齢','体重','体重変化','n_horses', 'rank'
+            Cols.WAKUBAN, #枠番
+            Cols.UMABAN, #馬番
+            Cols.KINRYO, #斤量
+            Cols.TANSHO_ODDS, #単勝
+            'horse_id',
+            'jockey_id',
+            '性',
+            '年齢',
+            '体重',
+            '体重変化',
+            'n_horses',
+            'rank'
             ]]
         return df

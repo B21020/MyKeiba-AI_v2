@@ -7,6 +7,9 @@ from tqdm.notebook import tqdm
 
 class DataMerger:
     def __init__(
+        """
+        初期処理
+        """
         self,
         results_processor: ResultsProcessor,
         race_info_processor: RaceInfoProcessor,
@@ -47,11 +50,14 @@ class DataMerger:
         - (レース結果のdate, その日に走る馬の過去成績データ)のペアを作る
         """
         print('separating horse results by date')
-        for date, df_by_date in tqdm(self._results.groupby('date')): #dateでデータを分割
+        # dateでデータを分割
+        for date, df_by_date in tqdm(self._results.groupby('date')):
             self._separated_results_dict[date] = df_by_date
-            horse_id_list = df_by_date['horse_id'].unique() #その日に走る馬一覧
+            # その日に走る馬一覧
+            horse_id_list = df_by_date['horse_id'].unique()
+            # dateより過去に絞る
             self._separated_horse_results_dict[date] = self._horse_results\
-                    .query('date < @date').query('index in @horse_id_list') #dateより過去に絞る
+                    .query('date < @date').query('index in @horse_id_list')
     
     def _merge_horse_results(self, n_races_list = [5, 9]):
         self._separate_by_date()
@@ -66,38 +72,38 @@ class DataMerger:
                 n_race_horse_results = self._filter_horse_results(self._separated_horse_results_dict[date], n_races)
                 
                 # horse_idのみのターゲットエンコーディング
-                ## 何レース分集計しているか分かるように、列名に接尾辞をつける
+                # 何レース分集計しているか分かるように、列名に接尾辞をつける
                 summarized = self._summarize(n_race_horse_results, self._target_cols).add_suffix('_{}R'.format(n_races))
-                ## resultsにマージ
+                # resultsにマージ
                 results = results.merge(summarized, left_on='horse_id', right_index=True, how='left')
                 
                 # horse_idとカテゴリ変数を合わせてターゲットエンコーディング
                 for group_col in self._group_cols:
-                    ## 何レース分、どのカテゴリ変数とともに集計しているか分かるように、列名に接尾辞をつける
+                    # 何レース分、どのカテゴリ変数とともに集計しているか分かるように、列名に接尾辞をつける
                     summarized_with = self._summarize_with(n_race_horse_results, self._target_cols, group_col)\
                         .add_suffix('_{}_{}R'.format(group_col, n_races)) 
-                    ## resultsにマージ
+                    # resultsにマージ
                     results = results.merge(summarized_with, left_on=['horse_id', group_col],right_index=True, how='left')
             # 直近nレースに絞らないで過去成績をマージ
             summarized = self._summarize(horse_results, self._target_cols).add_suffix('_allR')
             results = results.merge(summarized, left_on='horse_id', right_index=True, how='left')
             for group_col in self._group_cols:
-                ## どのカテゴリ変数とともに集計しているか分かるように、列名に接尾辞をつける
+                # どのカテゴリ変数とともに集計しているか分かるように、列名に接尾辞をつける
                 summarized_with = self._summarize_with(horse_results, self._target_cols, group_col)\
                     .add_suffix('_{}_allR'.format(group_col))
-                ## resultsにマージ
+                # resultsにマージ
                 results = results.merge(summarized_with, left_on=['horse_id', group_col], right_index=True, how='left')
             # 前走の日付をマージ
             latest = horse_results.groupby('horse_id')['date'].max().rename('latest')
             results = results.merge(latest, left_on='horse_id', right_index=True, how='left')
             # 辞書型に格納
             output_results_dict[date] = results
-        #日付で分かれていたものを結合
+        # 日付で分かれていたものを結合
         merged_data = pd.concat([output_results_dict[date] for date in output_results_dict])
         self._merged_data = merged_data
     
     def _merge_peds(self):
-        #血統データのマージ
+        # 血統データのマージ
         self._merged_data = self._merged_data\
             .merge(self._peds, left_on='horse_id', right_index=True, how='left')
     
