@@ -7,9 +7,6 @@ from tqdm.notebook import tqdm
 
 class DataMerger:
     def __init__(
-        """
-        初期処理
-        """
         self,
         results_processor: ResultsProcessor,
         race_info_processor: RaceInfoProcessor,
@@ -18,6 +15,9 @@ class DataMerger:
         target_cols: list,
         group_cols: list,
         ):
+        """
+        初期処理
+        """
         self._results = results_processor.preprocessed_data #レース結果
         self._race_info = race_info_processor.preprocessed_data #レース情報
         self._horse_results = horse_results_processor.preprocessed_data #馬の過去成績
