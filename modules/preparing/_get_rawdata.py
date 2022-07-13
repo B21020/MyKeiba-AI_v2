@@ -16,12 +16,13 @@ def get_rawdata_results(html_path_list: list):
     for html_path in tqdm(html_path_list):
         with open(html_path, 'rb') as f:
             try:
-                html = f.read() #保存してあるbinファイルを読み込む
-                df = pd.read_html(html)[0] #メインとなるレース結果テーブルデータを取得
-                
-                soup = BeautifulSoup(html, "lxml") #htmlをsoupオブジェクトに変換
-
-                #馬ID、騎手IDをスクレイピング
+                # 保存してあるbinファイルを読み込む
+                html = f.read()
+                # メインとなるレース結果テーブルデータを取得
+                df = pd.read_html(html)[0]
+                # htmlをsoupオブジェクトに変換
+                soup = BeautifulSoup(html, "lxml")
+                # 馬ID、騎手IDをスクレイピング
                 horse_id_list = []
                 horse_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
                     "a", attrs={"href": re.compile("^/horse")}
@@ -39,7 +40,7 @@ def get_rawdata_results(html_path_list: list):
                 df["horse_id"] = horse_id_list
                 df["jockey_id"] = jockey_id_list
 
-                #インデックスをrace_idにする
+                # インデックスをrace_idにする
                 race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
 
@@ -47,7 +48,7 @@ def get_rawdata_results(html_path_list: list):
             except Exception as e:
                 print('error at {}'.format(html_path))
                 print(e)
-    #pd.DataFrame型にして一つのデータにまとめる
+    # pd.DataFrame型にして一つのデータにまとめる
     race_results_df = pd.concat([race_results[key] for key in race_results])
 
     return race_results_df
@@ -137,12 +138,13 @@ def get_rawdata_return(html_path_list: list):
     for html_path in tqdm(html_path_list):
         with open(html_path, 'rb') as f:
             try: 
-                html = f.read() #保存してあるbinファイルを読み込む
+                # 保存してあるbinファイルを読み込む
+                html = f.read()
                 
                 html = html.replace(b'<br />', b'br')
                 dfs = pd.read_html(html)
 
-                #dfsの1番目に単勝〜馬連、2番目にワイド〜三連単がある
+                # dfsの1番目に単勝〜馬連、2番目にワイド〜三連単がある
                 df = pd.concat([dfs[1], dfs[2]])
                 
                 race_id = re.findall('race\W(\d+).bin', html_path)[0]
@@ -151,7 +153,7 @@ def get_rawdata_return(html_path_list: list):
             except Exception as e:
                 print('error at {}'.format(html_path))
                 print(e)
-    #pd.DataFrame型にして一つのデータにまとめる
+    # pd.DataFrame型にして一つのデータにまとめる
     horse_results_df = pd.concat([horse_results[key] for key in horse_results])
     return horse_results_df
 
@@ -163,10 +165,11 @@ def get_rawdata_horse_results(html_path_list: list):
     horse_results = {}
     for html_path in tqdm(html_path_list):
         with open(html_path, 'rb') as f:
-            html = f.read() #保存してあるbinファイルを読み込む
+            # 保存してあるbinファイルを読み込む
+            html = f.read()
             
             df = pd.read_html(html)[3]
-            #受賞歴がある馬の場合、3番目に受賞歴テーブルが来るため、4番目のデータを取得する
+            # 受賞歴がある馬の場合、3番目に受賞歴テーブルが来るため、4番目のデータを取得する
             if df.columns[0]=='受賞歴':
                 df = pd.read_html(html)[4]
                 
@@ -175,7 +178,7 @@ def get_rawdata_horse_results(html_path_list: list):
             df.index = [horse_id] * len(df)
             horse_results[horse_id] = df
             
-    #pd.DataFrame型にして一つのデータにまとめる
+    # pd.DataFrame型にして一つのデータにまとめる
     horse_results_df = pd.concat([horse_results[key] for key in horse_results])
     return horse_results_df
 
@@ -220,12 +223,17 @@ def update_rawdata(filepath: str, new_df: pd.DataFrame) -> pd.DataFrame:
     元々のテーブルにnew_dfが追加されてpickleファイルが更新される。
     pickleファイルが存在しない場合は、filepathに新たに作成される。
     """
-    if os.path.isfile(filepath): #pickleファイルが存在する場合の更新処理
-        filedf = pd.read_pickle(filepath) #元々のテーブルを読み込み
-        #new_dfに存在しないindexのみ、旧データを使う
+    # pickleファイルが存在する場合の更新処理
+    if os.path.isfile(filepath):
+        # 元々のテーブルを読み込み
+        filedf = pd.read_pickle(filepath)
+        # new_dfに存在しないindexのみ、旧データを使う
         filtered_old = filedf[~filedf.index.isin(new_df.index)]
-        updated = pd.concat([filtered_old, new_df]) #結合
-        #TODO: 間違ったデータを結合してしまった時の処理と、結合データがない場合の処理
-        updated.to_pickle(filepath) #保存
-    else: #pickleファイルが存在しない場合、新たに作成
+        # 結合
+        updated = pd.concat([filtered_old, new_df])
+        # TODO: 間違ったデータを結合してしまった時の処理と、結合データがない場合の処理
+        # 保存
+        updated.to_pickle(filepath)
+    else:
+        # pickleファイルが存在しない場合、新たに作成
         new_df.to_pickle(filepath)

@@ -21,7 +21,8 @@ class KeibaAIFactory:
         保存先はmodels/(yyyymmdd)/(version_name).pickle。
         """
         yyyymmdd = datetime.date.today().strftime('%Y%m%d')
-        os.makedirs(os.path.join('models', yyyymmdd), exist_ok=True) #ディレクトリ作成
+        # ディレクトリ作成
+        os.makedirs(os.path.join('models', yyyymmdd), exist_ok=True)
         filepath_pickle = os.path.join('models', yyyymmdd, '{}.pickle'.format(version_name))
         with open(filepath_pickle, mode='wb') as f:
             pickle.dump(keibaAI, f)
