@@ -92,28 +92,28 @@ def get_rawdata_info(html_path_list: list):
                     if "年" in text:
                         df["date"] = [text]
                     if "右" in text:
-                        df["around"] = Master.AROUND_LIST[0]
+                        df["around"] = [Master.AROUND_LIST[0]]
                     if "左" in text:
-                        df["around"] = Master.AROUND_LIST[1]
+                        df["around"] = [Master.AROUND_LIST[1]]
                     if "直線" in text:
-                        df["around"] = Master.AROUND_LIST[2]
+                        df["around"] = [Master.AROUND_LIST[2]]
                     if "新馬" in text:
-                        df["race_class"] = Master.RACE_CLASS_LIST[0]
+                        df["race_class"] = [Master.RACE_CLASS_LIST[0]]
                     if "未勝利" in text:
-                        df["race_class"] = Master.RACE_CLASS_LIST[1]
+                        df["race_class"] = [Master.RACE_CLASS_LIST[1]]
                     if ("1勝クラス" in text) or ("500万下" in text):
-                        df["race_class"] = Master.RACE_CLASS_LIST[2]
+                        df["race_class"] = [Master.RACE_CLASS_LIST[2]]
                     if ("2勝クラス" in text) or ("1000万下" in text):
-                        df["race_class"] = Master.RACE_CLASS_LIST[3]
+                        df["race_class"] = [Master.RACE_CLASS_LIST[3]]
                     if ("3勝クラス" in text) or ("1600万下" in text):
-                        df["race_class"] = Master.RACE_CLASS_LIST[4]
+                        df["race_class"] = [Master.RACE_CLASS_LIST[4]]
                     if "オープン" in text:
-                        df["race_class"] = Master.RACE_CLASS_LIST[5]
+                        df["race_class"] = [Master.RACE_CLASS_LIST[5]]
 
                 # 障害レースの場合
                 if hurdle_race_flg:
-                    df["around"] = Master.AROUND_LIST[3]
-                    df["race_class"] = Master.RACE_CLASS_LIST[6]
+                    df["around"] = [Master.AROUND_LIST[3]]
+                    df["race_class"] = [Master.RACE_CLASS_LIST[6]]
 
                 # インデックスをrace_idにする
                 race_id = re.findall('race\W(\d+).bin', html_path)[0]
