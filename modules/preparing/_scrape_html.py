@@ -16,15 +16,22 @@ def scrape_html_race(race_id_list: list, skip: bool = True):
     """
     updated_html_path_list = []
     for race_id in tqdm(race_id_list):
-        filename = os.path.join(LocalPaths.HTML_RACE_DIR, race_id+'.bin') #保存するファイル名
-        if skip and os.path.isfile(filename): #skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
+        # 保存するファイル名
+        filename = os.path.join(LocalPaths.HTML_RACE_DIR, race_id+'.bin')
+        # skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
+        if skip and os.path.isfile(filename):
             print('race_id {} skipped'.format(race_id))
         else:
-            url = UrlPaths.RACE_URL + race_id #race_idからurlを作る
-            html = urlopen(url).read() #スクレイピング実行
-            time.sleep(1) #相手サーバーに負担をかけないように1秒待機する
-            with open(filename, 'wb') as f: #保存するファイルパスを指定
-                f.write(html) #保存
+            # race_idからurlを作る
+            url = UrlPaths.RACE_URL + race_id
+            # 相手サーバーに負担をかけないように1秒待機する
+            time.sleep(1)
+            # スクレイピング実行
+            html = urlopen(url).read()
+            # 保存するファイルパスを指定
+            with open(filename, 'wb') as f:
+                # 保存
+                f.write(html)
             updated_html_path_list.append(filename)
     return updated_html_path_list
 
@@ -36,15 +43,22 @@ def scrape_html_horse(horse_id_list: list, skip: bool = True):
     """
     updated_html_path_list = []
     for horse_id in tqdm(horse_id_list):
-        filename = os.path.join(LocalPaths.HTML_HORSE_DIR, horse_id+'.bin') #保存するファイル名
-        if skip and os.path.isfile(filename): #skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
+        # 保存するファイル名
+        filename = os.path.join(LocalPaths.HTML_HORSE_DIR, horse_id+'.bin')
+        # skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
+        if skip and os.path.isfile(filename):
             print('horse_id {} skipped'.format(horse_id))
         else:
-            url = UrlPaths.HORSE_URL + horse_id #horse_idからurlを作る
-            time.sleep(1) #相手サーバーに負担をかけないように1秒待機する
-            html = urlopen(url).read() #スクレイピング実行
-            with open(filename, 'wb') as f: #保存するファイルパスを指定
-                f.write(html) #保存
+            # horse_idからurlを作る
+            url = UrlPaths.HORSE_URL + horse_id
+            # 相手サーバーに負担をかけないように1秒待機する
+            time.sleep(1)
+            # スクレイピング実行
+            html = urlopen(url).read()
+            # 保存するファイルパスを指定
+            with open(filename, 'wb') as f:
+                # 保存
+                f.write(html)
             updated_html_path_list.append(filename)
     return updated_html_path_list
 
@@ -56,15 +70,22 @@ def scrape_html_ped(horse_id_list: list, skip: bool = True):
     """
     updated_html_path_list = []
     for horse_id in tqdm(horse_id_list):
-        filename = os.path.join(LocalPaths.HTML_PED_DIR, horse_id+'.bin') #保存するファイル名
-        if skip and os.path.isfile(filename): #skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
+        # 保存するファイル名
+        filename = os.path.join(LocalPaths.HTML_PED_DIR, horse_id+'.bin')
+        # skipがTrueで、かつbinファイルがすでに存在する場合は飛ばす
+        if skip and os.path.isfile(filename):
             print('horse_id {} skipped'.format(horse_id))
         else:
-            url = UrlPaths.PED_URL + horse_id #horse_idからurlを作る
-            time.sleep(1) #相手サーバーに負担をかけないように1秒待機する
-            html = urlopen(url).read() #スクレイピング実行
-            with open(filename, 'wb') as f: #保存するファイルパスを指定
-                f.write(html) #保存
+            # horse_idからurlを作る
+            url = UrlPaths.PED_URL + horse_id
+            # 相手サーバーに負担をかけないように1秒待機する
+            time.sleep(1)
+            # スクレイピング実行
+            html = urlopen(url).read()
+            # 保存するファイルパスを指定
+            with open(filename, 'wb') as f:
+                # 保存
+                f.write(html)
             updated_html_path_list.append(filename)
     return updated_html_path_list
 

@@ -58,7 +58,7 @@ class HorseResultsProcessor(AbstractDataProcessor):
         # race_type（数字以外の文字列を抽出）
         df['race_type'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\D+)')[0].map(Master.RACE_TYPE_DICT)
         # 距離は10の位を切り捨てる
-        df['course_len'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\d+)').astype(int) // 100
+        df['course_len'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\d+)').astype(float) // 100
         # 距離列を削除
         df.drop([Cols.RACE_TYPE_COURSE_LEN], axis=1, inplace=True)
         

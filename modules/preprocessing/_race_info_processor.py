@@ -3,9 +3,15 @@ from ._abstract_data_processor import AbstractDataProcessor
 
 class RaceInfoProcessor(AbstractDataProcessor):
     def __init__(self, filepath):
+        """
+        初期処理
+        """
         super().__init__(filepath)
         
     def _preprocess(self):
+        """
+        前処理
+        """
         df = self.raw_data
         # 距離は10の位を切り捨てる
         df["course_len"] = df["course_len"].astype(float) // 100

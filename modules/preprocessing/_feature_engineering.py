@@ -110,6 +110,9 @@ class FeatureEngineering:
         return self
     
     def dumminize_kaisai(self):
+        """
+        開催カラムをダミー変数化する
+        """
         self.__data[HorseResultsCols.PLACE] = pd.Categorical(
             self.__data[HorseResultsCols.PLACE], list(Master.PLACE_DICT.values())
             )
