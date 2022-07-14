@@ -8,9 +8,15 @@ from modules.constants import HorseResultsCols as Cols
 
 class HorseResultsProcessor(AbstractDataProcessor):
     def __init__(self, filepath):
+        """
+        初期処理
+        """
         super().__init__(filepath)
     
     def _preprocess(self):
+        """
+        前処理
+        """
         df = self.raw_data
 
         # 不要な行を削除する
@@ -57,7 +63,7 @@ class HorseResultsProcessor(AbstractDataProcessor):
         
         # race_type（数字以外の文字列を抽出）
         df['race_type'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\D+)')[0].map(Master.RACE_TYPE_DICT)
-        # 距離は10の位を切り捨てる
+        # 距離は10の位を切り捨てる（数字の文字列を抽出）
         df['course_len'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\d+)').astype(float) // 100
         # 距離列を削除
         df.drop([Cols.RACE_TYPE_COURSE_LEN], axis=1, inplace=True)
@@ -71,5 +77,53 @@ class HorseResultsProcessor(AbstractDataProcessor):
 
         # インデックス名を与える
         df.index.name = 'horse_id'
-        
+
+        df = self._select_columns(df)
+
+        return df
+
+    def _select_columns(self, raw):
+        """
+        カラム抽出
+        """
+        df = raw.copy()[[
+            #Cols.DATE, #日付
+            Cols.PLACE, #開催
+            Cols.WEATHER, #天気
+            Cols.R, #R
+            Cols.RACE_NAME, #レース名
+            #映像
+            Cols.N_HORSES, #頭数
+            Cols.WAKUBAN, #枠番
+            Cols.UMABAN, #馬番
+            Cols.TANSHO_ODDS, #オッズ
+            Cols.POPULARITY, #人気
+            Cols.RANK, #着順
+            Cols.JOCKEY, #騎手
+            Cols.KINRYO, #斤量
+            #Cols.RACE_TYPE_COURSE_LEN, #距離
+            Cols.GROUND_STATE, #馬場
+            #馬場指数
+            #Cols.TIME, #タイム
+            Cols.RANK_DIFF, #着差
+            #ﾀｲﾑ指数
+            Cols.CORNER, #通過
+            Cols.PACE, #ペース
+            Cols.NOBORI, #上り
+            Cols.WEIGHT_AND_DIFF, #馬体重
+            #厩舎ｺﾒﾝﾄ
+            #備考
+            #勝ち馬(2着馬)
+            Cols.PRIZE, #賞金
+            'date',
+            'first_corner',
+            'final_corner',
+            'final_to_rank',
+            'first_to_rank',
+            'first_to_final',
+            'race_type',
+            'course_len',
+            'time_seconds'
+            ]]
+
         return df
