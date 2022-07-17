@@ -19,11 +19,6 @@ class HorseResultsProcessor(AbstractDataProcessor):
         """
         df = self.raw_data
 
-        # 不要な行を削除する
-        # タイムが「x:xx.x」以外の行
-        df = df.dropna(subset=[Cols.TIME])
-        df = df[df[Cols.TIME].str.contains('\d{1}:\d{2}\.\d{1}')]
-        
         # 着順に数字以外の文字列が含まれているものは、欠損値（NaN）に置き換える
         # サイト上のテーブルに存在する列名は、HorseResultsColsクラスで定数化している。
         df[Cols.RANK] = pd.to_numeric(df[Cols.RANK], errors='coerce')
@@ -67,13 +62,21 @@ class HorseResultsProcessor(AbstractDataProcessor):
         df['course_len'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\d+)').astype(float) // 100
         # 距離列を削除
         df.drop([Cols.RACE_TYPE_COURSE_LEN], axis=1, inplace=True)
-        
+
         # タイムの値を秒単位に変換
-        base_time = pd.to_datetime("00:00.0", format="%M:%S.%f")
-        df['time_seconds'] = pd.to_datetime(df[Cols.TIME], format="%M:%S.%f") - base_time
-        df['time_seconds'] = df['time_seconds'].dt.total_seconds()
-        # タイム列を削除
-        df.drop([Cols.TIME], axis=1, inplace=True)
+        # 準備
+        baseformat = '%M:%S.%f'
+        basetime = pd.to_datetime("00:00.0", format=baseformat)
+        to_datetime = lambda x: pd.to_datetime(df[Cols.TIME], format=x, errors='coerce')
+        # 秒単位へのフォーマット変換処理
+        datetime_s = to_datetime(baseformat)
+        # 「x:xx.x」フォーマット以外、許容するフォーマットを定義
+        formats_additional = ['%M.%S.%f', '%M:%S:%f']
+        for format_ in formats_additional:
+            # 秒単位へのフォーマット変換処理
+            datetime_s = datetime_s.fillna(to_datetime(format_))
+        # フォーマット例外は欠損値になる
+        df['time_seconds'] = (datetime_s - basetime).dt.total_seconds()
 
         # インデックス名を与える
         df.index.name = 'horse_id'
