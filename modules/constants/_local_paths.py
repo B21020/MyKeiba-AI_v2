@@ -20,6 +20,7 @@ class LocalPaths:
     RAW_RACE_INFO_PATH: str = os.path.join(RAW_DIR, 'race_info.pickle')
     RAW_RETURN_TABLES_PATH: str = os.path.join(RAW_DIR, 'return_tables.pickle')
     RAW_HORSE_RESULTS_PATH: str = os.path.join(RAW_DIR, 'horse_results.pickle')
+    RAW_HORSE_INFO_PATH: str = os.path.join(RAW_DIR, 'horse_info.pickle')
     RAW_PEDS_PATH: str = os.path.join(RAW_DIR, 'peds.pickle')
     
     ### masterディレクトリのパス

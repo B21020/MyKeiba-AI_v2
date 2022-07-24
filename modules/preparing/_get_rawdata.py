@@ -1,11 +1,13 @@
 import os
 import pandas as pd
+import copy
+from numpy import NaN
 from sympy import im
 from tqdm.notebook import tqdm
 from bs4 import BeautifulSoup
 import re
-
 from modules.constants import Master
+from modules.constants import HorseInfoCols
 
 def get_rawdata_results(html_path_list: list):
     """
@@ -22,7 +24,8 @@ def get_rawdata_results(html_path_list: list):
                 df = pd.read_html(html)[0]
                 # htmlをsoupオブジェクトに変換
                 soup = BeautifulSoup(html, "lxml")
-                # 馬ID、騎手IDをスクレイピング
+
+                # 馬IDをスクレイピング
                 horse_id_list = []
                 horse_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
                     "a", attrs={"href": re.compile("^/horse")}
@@ -30,6 +33,9 @@ def get_rawdata_results(html_path_list: list):
                 for a in horse_a_list:
                     horse_id = re.findall(r"\d+", a["href"])
                     horse_id_list.append(horse_id[0])
+                df["horse_id"] = horse_id_list
+
+                # 騎手IDをスクレイピング
                 jockey_id_list = []
                 jockey_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
                     "a", attrs={"href": re.compile("^/jockey")}
@@ -37,8 +43,27 @@ def get_rawdata_results(html_path_list: list):
                 for a in jockey_a_list:
                     jockey_id = re.findall(r"\d+", a["href"])
                     jockey_id_list.append(jockey_id[0])
-                df["horse_id"] = horse_id_list
                 df["jockey_id"] = jockey_id_list
+
+                # 調教師IDをスクレイピング
+                trainer_id_list = []
+                trainer_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
+                    "a", attrs={"href": re.compile("^/trainer")}
+                )
+                for a in trainer_a_list:
+                    trainer_id = re.findall(r"\d+", a["href"])
+                    trainer_id_list.append(trainer_id[0])
+                df["trainer_id"] = trainer_id_list
+
+                # 馬主IDをスクレイピング
+                owner_id_list = []
+                owner_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
+                    "a", attrs={"href": re.compile("^/owner")}
+                )
+                for a in owner_a_list:
+                    owner_id = re.findall(r"\d+", a["href"])
+                    owner_id_list.append(owner_id[0])
+                df["owner_id"] = owner_id_list
 
                 # インデックスをrace_idにする
                 race_id = re.findall('race\W(\d+).bin', html_path)[0]
@@ -134,7 +159,7 @@ def get_rawdata_return(html_path_list: list):
     raceページのhtmlを受け取って、払い戻しテーブルに変換する関数。
     """
     print('preparing raw return table')
-    horse_results = {}
+    race_return = {}
     for html_path in tqdm(html_path_list):
         with open(html_path, 'rb') as f:
             try: 
@@ -149,13 +174,93 @@ def get_rawdata_return(html_path_list: list):
                 
                 race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
-                horse_results[race_id] = df
+                race_return[race_id] = df
             except Exception as e:
                 print('error at {}'.format(html_path))
                 print(e)
     # pd.DataFrame型にして一つのデータにまとめる
-    horse_results_df = pd.concat([horse_results[key] for key in horse_results])
-    return horse_results_df
+    race_return_df = pd.concat([race_return[key] for key in race_return])
+    return race_return_df
+
+def get_rawdata_horse_info(html_path_list: list):
+    """
+    horseページのhtmlを受け取って、馬の基本情報のDataFrameに変換する関数。
+    """
+    print('preparing raw horse_info table')
+    horse_info = {}
+    # 取得する馬の基本情報
+    target_info = [
+        HorseInfoCols.BIRTHDAY,
+        HorseInfoCols.TRAINER,
+        HorseInfoCols.OWNER,
+        #HorseInfoCols.REC_INFO, #TODO 募集情報を取得する場合は、別の方法を検討
+        HorseInfoCols.BREEDER,
+        HorseInfoCols.ORIGIN,
+        HorseInfoCols.PRICE,
+        HorseInfoCols.WINNING_PRIZE,
+        HorseInfoCols.TOTAL_RESULTS,
+        HorseInfoCols.VICTORY_RACE,
+        HorseInfoCols.RELATIVE_HORSE,
+        ]
+    for html_path in tqdm(html_path_list):
+        with open(html_path, 'rb') as f:
+            # 保存してあるbinファイルを読み込む
+            html = f.read()
+
+            # 馬の基本情報を取得
+            df_info = pd.read_html(html)[1]
+            data = list(map(lambda x: df_info[df_info[0]==x].iloc[0, 1], target_info))
+
+            # htmlをsoupオブジェクトに変換
+            soup = BeautifulSoup(html, "lxml")
+
+            # 調教師IDをスクレイピング
+            try:
+                trainer_a_list = soup.find("table", attrs={"summary": "のプロフィール"}).find_all(
+                    "a", attrs={"href": re.compile("^/trainer")}
+                )
+                trainer_id = re.findall(r"\d+", trainer_a_list[0]["href"])[0]
+            except IndexError:
+                # 調教師IDを取得できない場合
+                #print('trainer_id empty {}'.format(html_path))
+                trainer_id = NaN
+            data.append(trainer_id)
+
+            # 馬主IDをスクレイピング
+            try:
+                owner_a_list = soup.find("table", attrs={"summary": "のプロフィール"}).find_all(
+                    "a", attrs={"href": re.compile("^/owner")}
+                )
+                owner_id = re.findall(r"\d+", owner_a_list[0]["href"])[0]
+            except IndexError:
+                # 馬主IDを取得できない場合
+                #print('owner_id empty {}'.format(html_path))
+                owner_id = NaN
+            data.append(owner_id)
+
+            # 生産者IDをスクレイピング
+            try:
+                breeder_a_list = soup.find("table", attrs={"summary": "のプロフィール"}).find_all(
+                    "a", attrs={"href": re.compile("^/breeder")}
+                )
+                breeder_id = re.findall(r"\d+", breeder_a_list[0]["href"])[0]
+            except IndexError:
+                # 生産者IDを取得できない場合
+                #print('breeder_id empty {}'.format(html_path))
+                breeder_id = NaN
+            data.append(breeder_id)
+
+            horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
+            horse_info[horse_id] = data
+
+    # スクレイピングしたカラム名を設定
+    add_column_info = ['info_trainer_id', 'info_owner_id', 'info_breeder_id']
+    # 馬の基本情報に取得したスクレイピング情報を追加
+    column_info = copy.copy(target_info)
+    column_info[len(column_info):len(column_info)] = add_column_info
+    # pd.DataFrame型にして一つのデータにまとめる
+    horse_info_df = pd.DataFrame(horse_info, index=column_info).T
+    return horse_info_df
 
 def get_rawdata_horse_results(html_path_list: list):
     """

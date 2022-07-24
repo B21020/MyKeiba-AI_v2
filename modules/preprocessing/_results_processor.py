@@ -42,6 +42,7 @@ class ResultsProcessor(AbstractDataProcessor):
         # 6/6出走数追加
         df['n_horses'] = df.index.map(df.index.value_counts())
         
+        # カラム抽出
         df = self._select_columns(df)
         
         return df
@@ -64,12 +65,23 @@ class ResultsProcessor(AbstractDataProcessor):
         カラム抽出
         """
         df = raw.copy()[[
-            Cols.WAKUBAN, #枠番
-            Cols.UMABAN, #馬番
-            Cols.KINRYO, #斤量
-            Cols.TANSHO_ODDS, #単勝
+            #Cols.RANK, # 着順
+            Cols.WAKUBAN, # 枠番
+            Cols.UMABAN, # 馬番
+            #Cols.HORSE_NAME, # 馬名
+            #Cols.SEX_AGE, # 性齢
+            Cols.KINRYO, # 斤量
+            #Cols.JOCKEY, # 騎手
+            #Cols.TIME # タイム
+            #Cols.RANK_DIFF # 着差
+            Cols.TANSHO_ODDS, # 単勝
+            #Cols.POPULARITY, # 人気
+            #Cols.WEIGHT_AND_DIFF, # 馬体重
+            #Cols.TRAINER, # 調教師
             'horse_id',
             'jockey_id',
+            'trainer_id',
+            'owner_id',
             '性',
             '年齢',
             '体重',

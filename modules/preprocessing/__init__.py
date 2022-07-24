@@ -1,5 +1,6 @@
 import imp
 from ._horse_results_processor import HorseResultsProcessor
+from ._horse_info_processor import HorseInfoProcessor
 from ._data_merger import DataMerger
 from ._feature_engineering import FeatureEngineering
 from ._peds_processor import PedsProcessor
