@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import copy
 from numpy import NaN
-from sympy import im
 from tqdm.notebook import tqdm
 from bs4 import BeautifulSoup
 import re
@@ -253,11 +252,9 @@ def get_rawdata_horse_info(html_path_list: list):
             horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
             horse_info[horse_id] = data
 
-    # スクレイピングしたカラム名を設定
-    add_column_info = ['info_trainer_id', 'info_owner_id', 'info_breeder_id']
     # 馬の基本情報に取得したスクレイピング情報を追加
     column_info = copy.copy(target_info)
-    column_info[len(column_info):len(column_info)] = add_column_info
+    column_info = column_info + ['info_trainer_id', 'info_owner_id', 'info_breeder_id']
     # pd.DataFrame型にして一つのデータにまとめる
     horse_info_df = pd.DataFrame(horse_info, index=column_info).T
     return horse_info_df

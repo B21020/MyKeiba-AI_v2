@@ -1,6 +1,5 @@
 import datetime
 import os
-import pickle
 import dill
 from ._keiba_ai import KeibaAI
 from ._data_splitter import DataSplitter

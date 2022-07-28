@@ -1,7 +1,6 @@
 import time
 import re
 import pandas as pd
-from tkinter.tix import NoteBook
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from selenium import webdriver

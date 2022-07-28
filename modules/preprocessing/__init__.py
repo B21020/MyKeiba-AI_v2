@@ -1,4 +1,3 @@
-import imp
 from ._horse_results_processor import HorseResultsProcessor
 from ._horse_info_processor import HorseInfoProcessor
 from ._data_merger import DataMerger

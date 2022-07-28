@@ -28,7 +28,6 @@ class DataMerger:
         self._horse_results = horse_results_processor.preprocessed_data
         # 馬の基本情報テーブル（前処理後）
         self._horse_info = horse_info_processor.preprocessed_data
-        # 馬の基本情報テーブル（前処理後）
         # 生産者情報をリネーム、馬主情報はレース情報テーブルのものを利用するため、列を削除
         self._horse_info = horse_info_processor.preprocessed_data.rename\
             (columns={'info_breeder_id': 'breeder_id'}).drop(['info_owner_id'], axis=1)
@@ -127,7 +126,9 @@ class DataMerger:
         self._merged_data = merged_data
     
     def _merge_horse_info(self):
-        # 馬の基本情報テーブルのマージ
+        """
+        馬の基本情報テーブルのマージ
+        """
         self._merged_data = self._merged_data.merge(
             self._horse_info,
             left_on='horse_id',

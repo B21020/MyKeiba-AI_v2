@@ -1,4 +1,3 @@
-from importlib.resources import path
 import pandas as pd
 from ._results_processor import ResultsProcessor
 from modules.constants import ResultsCols as Cols

@@ -18,16 +18,14 @@ class HorseInfoProcessor(AbstractDataProcessor):
         df = self.raw_data
 
         # 生年月日をdatetime型に設定
-        df[Cols.BIRTHDAY] = df[Cols.BIRTHDAY].apply(lambda x: x.replace('年','/'))
-        df[Cols.BIRTHDAY] = df[Cols.BIRTHDAY].apply(lambda x: x.replace('月','/'))
-        df[Cols.BIRTHDAY] = df[Cols.BIRTHDAY].apply(lambda x: x.replace('日',''))
-        df['birthday'] = pd.to_datetime(df[Cols.BIRTHDAY])
+        df['birthday'] = pd.to_datetime(df[Cols.BIRTHDAY], format="%Y年%m月%d日")
         # 生年月日列を削除
         df.drop([Cols.BIRTHDAY], axis=1, inplace=True)
 
         # インデックス名を与える
         df.index.name = 'horse_id'
 
+        # カラム抽出
         df = self._select_columns(df)
 
         return df
