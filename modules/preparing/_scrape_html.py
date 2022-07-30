@@ -109,19 +109,16 @@ def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
     ### 取得日マスタの更新 ###
     print('updating master')
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') # 現在日時を取得
-    # マスタのパス
-    filename_master = os.path.join(LocalPaths.MASTER_DIR, 'horse_results_updated_at.csv')
     # ファイルが存在しない場合は、作成する
-    if not os.path.isfile(filename_master):
-        pd.DataFrame(columns=['horse_id', 'updated_at']).to_csv(filename_master, index=None)
+    if not os.path.isfile(LocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATH):
+        pd.DataFrame(columns=['horse_id', 'updated_at']).to_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATH, index=None)
     # マスタを読み込み
-    master = pd.read_csv(filename_master, dtype=object)
+    master = pd.read_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATH, dtype=object)
     # horse_id列に新しい馬を追加
     new_master = master.merge(horse_id_df, on='horse_id', how='outer')
     # マスタ更新
     new_master.loc[new_master['horse_id'].isin(horse_id_list), 'updated_at'] = now
     # 列が入れ替わってしまう場合があるので、修正しつつ保存
-    new_master[['horse_id', 'updated_at']].to_csv(filename_master, index=None)
+    new_master[['horse_id', 'updated_at']].to_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATH, index=None)
     return updated_html_path_list
-    
 #TODO: scrape_html_horse_with_updated_atのテスト
