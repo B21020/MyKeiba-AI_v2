@@ -4,6 +4,8 @@
 # データは容量が大きすぎので除外
 data/**/*.pickle
 data/*.pickle
+data/**/*.pickle.bak
+data/*.pickle.bak
 data/**/*.csv
 data/**/**/*.bin
 models/**/*.pickle
