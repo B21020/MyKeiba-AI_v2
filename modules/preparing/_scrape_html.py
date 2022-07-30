@@ -115,7 +115,7 @@ def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
     if not os.path.isfile(LocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATH):
         pd.DataFrame(columns=['horse_id', 'updated_at']).to_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATH, index=None)
     # マスタを読み込み
-    master = pd.read_csv(filenamLocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATHe_master, dtype=object)
+    master = pd.read_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATH, dtype=object)
     # horse_id列に新しい馬を追加
     new_master = master.merge(horse_id_df, on='horse_id', how='outer')
     # マスタ更新
