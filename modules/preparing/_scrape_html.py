@@ -109,8 +109,6 @@ def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
     ### 取得日マスタの更新 ###
     print('updating master')
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') # 現在日時を取得
-    # マスタのパス
-    filename_master = os.path.join(LocalPaths.MASTER_DIR, 'horse_results_updated_at.csv')
     # ファイルが存在しない場合は、作成する
     if not os.path.isfile(LocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATH):
         pd.DataFrame(columns=['horse_id', 'updated_at']).to_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_MASTER_PATH, index=None)
