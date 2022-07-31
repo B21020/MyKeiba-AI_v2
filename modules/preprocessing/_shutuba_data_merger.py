@@ -23,9 +23,7 @@ class ShutubaDataMerger(DataMerger):
         # 馬の過去成績テーブル（前処理後）
         self._horse_results = horse_results_processor.preprocessed_data
         # 馬の基本情報テーブル（前処理後）
-        # 出馬テーブルに存在しない生産者情報、馬主情報をリネーム
-        self._horse_info = horse_info_processor.preprocessed_data.rename\
-            (columns={'info_owner_id': 'owner_id', 'info_breeder_id': 'breeder_id'})
+        self._horse_info = horse_info_processor.preprocessed_data
         # 血統テーブル（前処理後）
         self._peds = peds_processor.preprocessed_data
         # 集計対象列

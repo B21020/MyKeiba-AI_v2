@@ -185,7 +185,7 @@ def get_rawdata_horse_info(html_path_list: list):
     """
     print('preparing raw horse_info table')
     horse_info_df = pd.DataFrame()
-
+    horse_info = {}
     for html_path in tqdm(html_path_list):
         with open(html_path, 'rb') as f:
             # 保存してあるbinファイルを読み込む
@@ -207,7 +207,7 @@ def get_rawdata_horse_info(html_path_list: list):
                 # 調教師IDを取得できない場合
                 #print('trainer_id empty {}'.format(html_path))
                 trainer_id = NaN
-            df_info['info_trainer_id'] = trainer_id
+            df_info['trainer_id'] = trainer_id
 
             # 馬主IDをスクレイピング
             try:
@@ -219,7 +219,7 @@ def get_rawdata_horse_info(html_path_list: list):
                 # 馬主IDを取得できない場合
                 #print('owner_id empty {}'.format(html_path))
                 owner_id = NaN
-            df_info['info_owner_id'] = owner_id
+            df_info['owner_id'] = owner_id
 
             # 生産者IDをスクレイピング
             try:
@@ -231,15 +231,15 @@ def get_rawdata_horse_info(html_path_list: list):
                 # 生産者IDを取得できない場合
                 #print('breeder_id empty {}'.format(html_path))
                 breeder_id = NaN
-            df_info['info_breeder_id'] = breeder_id
+            df_info['breeder_id'] = breeder_id
 
+            # インデックスをrace_idにする
             horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
-            df_info['horse_id'] = horse_id
+            df_info.index = [horse_id] * len(df_info)
+            horse_info[horse_id] = df_info
 
-            horse_info_df = pd.concat([horse_info_df, df_info], axis=0)
-
-    horse_info_df.set_index('horse_id', inplace = True)
-    horse_info_df.index.names = ['']
+    # pd.DataFrame型にして一つのデータにまとめる
+    horse_info_df = pd.concat([horse_info[key] for key in horse_info])
 
     return horse_info_df
 

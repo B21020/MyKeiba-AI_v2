@@ -27,10 +27,9 @@ class DataMerger:
         # 馬の過去成績テーブル（前処理後）
         self._horse_results = horse_results_processor.preprocessed_data
         # 馬の基本情報テーブル（前処理後）
-        self._horse_info = horse_info_processor.preprocessed_data
-        # 生産者情報をリネーム、馬主情報はレース情報テーブルのものを利用するため、列を削除
-        self._horse_info = horse_info_processor.preprocessed_data.rename\
-            (columns={'info_breeder_id': 'breeder_id'}).drop(['info_owner_id'], axis=1)
+        # 馬主情報はレース情報テーブルのものを利用するため、列を削除
+        self._horse_info = horse_info_processor.preprocessed_data.drop(
+            ['owner_id'], axis=1)
         # 血統テーブル（前処理後）
         self._peds = peds_processor.preprocessed_data
         # 集計対象列

@@ -47,9 +47,9 @@ class HorseInfoProcessor(AbstractDataProcessor):
             #Cols.VICTORY_RACE, # 人気
             #Cols.RELATIVE_HORSE, # 近親馬
             'birthday',
-            #'info_trainer_id',
-            'info_owner_id',
-            'info_breeder_id'
+            #'trainer_id',
+            'owner_id',
+            'breeder_id'
             ]]
 
         return df
