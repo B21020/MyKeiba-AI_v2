@@ -37,12 +37,13 @@ def scrape_kaisai_date(from_: str, to_: str):
             kaisai_date_list.append(re.findall('(?<=kaisai_date=)\d+', a['href'])[0])
     return kaisai_date_list
     
-def scrape_race_id_list(kaisai_date_list: list, from_shutuba=False, waiting_time=10):
+def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
     """
     開催日をyyyymmddの文字列形式でリストで入れると、レースid一覧が返ってくる関数。
-    レース前日準備のためrace_idを取得する際には、from_shutuba=Trueにする。
+    関数内にて日付を取得し、レース前日準備のためrace_idを取得するかを自動判定を行う。
     ChromeDriverは要素を取得し終わらないうちに先に進んでしまうことがあるので、その場合の待機時間をwaiting_timeで指定。
     """
+    now_date = datetime.datetime.now().date().strftime('%Y%m%d')
     race_id_list = []
     options = Options()
     options.add_argument('--headless') #ヘッドレスモード（ブラウザが立ち上がらない）
@@ -68,7 +69,7 @@ def scrape_race_id_list(kaisai_date_list: list, from_shutuba=False, waiting_time
                 time.sleep(waiting_time)
                 a_list = driver.find_element(By.CLASS_NAME, 'RaceList_Box').find_elements(By.TAG_NAME, 'a')
             for a in a_list:
-                if from_shutuba:
+                if kaisai_date >= now_date:
                     race_id = re.findall('(?<=shutuba.html\?race_id=)\d+', a.get_attribute('href'))
                 else:
                     race_id = re.findall('(?<=result.html\?race_id=)\d+', a.get_attribute('href'))
