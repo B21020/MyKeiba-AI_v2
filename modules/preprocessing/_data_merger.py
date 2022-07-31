@@ -1,5 +1,6 @@
 import pandas as pd
 from ._horse_results_processor import HorseResultsProcessor
+from ._horse_info_processor import HorseInfoProcessor
 from ._peds_processor import PedsProcessor
 from ._race_info_processor import RaceInfoProcessor
 from ._results_processor import ResultsProcessor
@@ -11,6 +12,7 @@ class DataMerger:
         results_processor: ResultsProcessor,
         race_info_processor: RaceInfoProcessor,
         horse_results_processor: HorseResultsProcessor,
+        horse_info_processor: HorseInfoProcessor,
         peds_processor: PedsProcessor,
         target_cols: list,
         group_cols: list,
@@ -18,19 +20,36 @@ class DataMerger:
         """
         初期処理
         """
-        self._results = results_processor.preprocessed_data #レース結果
-        self._race_info = race_info_processor.preprocessed_data #レース情報
-        self._horse_results = horse_results_processor.preprocessed_data #馬の過去成績
-        self._peds = peds_processor.preprocessed_data #血統
-        self._target_cols = target_cols #集計対象列
-        self._group_cols = group_cols #horse_idと一緒にターゲットエンコーディングしたいカテゴリ変数
-        self._merged_data = pd.DataFrame() #全てのマージが完了したデータ
-        self._separated_results_dict = {} #日付(date列)ごとに分かれたレース結果
-        self._separated_horse_results_dict = {} #レース結果データのdateごとに分かれた馬の過去成績
+        # レース結果テーブル（前処理後）
+        self._results = results_processor.preprocessed_data
+        # レース情報テーブル（前処理後）
+        self._race_info = race_info_processor.preprocessed_data
+        # 馬の過去成績テーブル（前処理後）
+        self._horse_results = horse_results_processor.preprocessed_data
+        # 馬の基本情報テーブル（前処理後）
+        # 馬主情報はレース情報テーブルのものを利用するため、列を削除
+        self._horse_info = horse_info_processor.preprocessed_data.drop(
+            ['owner_id'], axis=1)
+        # 血統テーブル（前処理後）
+        self._peds = peds_processor.preprocessed_data
+        # 集計対象列
+        self._target_cols = target_cols
+        # horse_idと一緒にターゲットエンコーディングしたいカテゴリ変数
+        self._group_cols = group_cols
+        # 全てのマージが完了したデータ
+        self._merged_data = pd.DataFrame()
+        # 日付(date列)ごとに分かれたレース結果
+        self._separated_results_dict = {}
+        # レース結果データのdateごとに分かれた馬の過去成績
+        self._separated_horse_results_dict = {}
     
     def merge(self):
+        """
+        マージ処理
+        """
         self._merge_race_info()
         self._merge_horse_results()
+        self._merge_horse_info()
         self._merge_peds()
     
     def _merge_race_info(self):
@@ -58,8 +77,11 @@ class DataMerger:
             # dateより過去に絞る
             self._separated_horse_results_dict[date] = self._horse_results\
                     .query('date < @date').query('index in @horse_id_list')
-    
+
     def _merge_horse_results(self, n_races_list = [5, 9]):
+        """
+        馬の過去成績テーブルのマージ
+        """
         self._separate_by_date()
         print('merging horse_results')
         output_results_dict = {}
@@ -102,10 +124,27 @@ class DataMerger:
         merged_data = pd.concat([output_results_dict[date] for date in output_results_dict])
         self._merged_data = merged_data
     
+    def _merge_horse_info(self):
+        """
+        馬の基本情報テーブルのマージ
+        """
+        self._merged_data = self._merged_data.merge(
+            self._horse_info,
+            left_on='horse_id',
+            right_index = True,
+            how = 'left'
+            )
+    
     def _merge_peds(self):
-        # 血統データのマージ
-        self._merged_data = self._merged_data\
-            .merge(self._peds, left_on='horse_id', right_index=True, how='left')
+        """
+        血統テーブルのマージ
+        """
+        self._merged_data = self._merged_data.merge(
+            self._peds,
+            left_on='horse_id',
+            right_index=True,
+            how='left'
+            )
     
     @property
     def merged_data(self):

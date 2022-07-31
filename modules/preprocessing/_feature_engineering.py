@@ -24,6 +24,15 @@ class FeatureEngineering:
         self.__data['interval'] = (self.__data['date'] - self.__data['latest']).dt.days
         self.__data.drop('latest', axis=1, inplace=True)
         return self
+
+    def add_agedays(self):
+        """
+        レース出走日から日齢を算出
+        """
+        # 日齢を算出
+        self.__data['age_days'] = (self.__data['date'] - self.__data['birthday']).dt.days
+        self.__data.drop('birthday', axis=1, inplace=True)
+        return self
     
     def dumminize_weather(self):
         """
@@ -63,7 +72,7 @@ class FeatureEngineering:
     
     def __label_encode(self, target_col: str):
         """
-        引数で指定されたID（horse_id/jockey_id）を
+        引数で指定されたID（horse_id/jockey_id/trainer_id/owner_id/breeder_id）を
         ラベルエンコーディングして、Categorical型に変換する。
         """
         csv_path = os.path.join(LocalPaths.MASTER_DIR, target_col + '.csv')
@@ -109,6 +118,27 @@ class FeatureEngineering:
         self.__label_encode('jockey_id')
         return self
     
+    def encode_trainer_id(self):
+        """
+        trainer_idをラベルエンコーディングして、Categorical型に変換する。
+        """
+        self.__label_encode('trainer_id')
+        return self
+
+    def encode_owner_id(self):
+        """
+        owner_idをラベルエンコーディングして、Categorical型に変換する。
+        """
+        self.__label_encode('owner_id')
+        return self
+
+    def encode_breeder_id(self):
+        """
+        breeder_idをラベルエンコーディングして、Categorical型に変換する。
+        """
+        self.__label_encode('breeder_id')
+        return self
+
     def dumminize_kaisai(self):
         """
         開催カラムをダミー変数化する

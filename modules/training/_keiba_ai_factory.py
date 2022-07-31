@@ -1,6 +1,6 @@
 import datetime
 import os
-import pickle
+import dill
 from ._keiba_ai import KeibaAI
 from ._data_splitter import DataSplitter
 
@@ -25,9 +25,9 @@ class KeibaAIFactory:
         os.makedirs(os.path.join('models', yyyymmdd), exist_ok=True)
         filepath_pickle = os.path.join('models', yyyymmdd, '{}.pickle'.format(version_name))
         with open(filepath_pickle, mode='wb') as f:
-            pickle.dump(keibaAI, f)
+            dill.dump(keibaAI, f)
     
     @staticmethod
     def load(filepath: str) -> KeibaAI:
         with open(filepath, mode='rb') as f:
-            return pickle.load(f)
+            return dill.load(f)

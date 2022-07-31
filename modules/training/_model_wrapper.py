@@ -22,14 +22,14 @@ class ModelWrapper:
         
         params = {'objective': 'binary'}
         
-        #チューニング実行
+        # チューニング実行
         lgb_clf_o = lgb_o.train(
             params,
             datasets.lgb_train_optuna,
             valid_sets=(datasets.lgb_train_optuna, datasets.lgb_valid_optuna),
             verbose_eval=100,
             early_stopping_rounds=10,
-            optuna_seed=100 #optunaのseed固定
+            optuna_seed=100 # optunaのseed固定
             )
 
         # num_iterationsとearly_stopping_roundは今は使わないので削除

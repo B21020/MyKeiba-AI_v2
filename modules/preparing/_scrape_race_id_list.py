@@ -22,8 +22,8 @@ def scrape_kaisai_date(from_: str, to_: str):
     # 開催日一覧を入れるリスト
     kaisai_date_list = []
     for year, month in tqdm(zip(date_range.year, date_range.month), total=len(date_range)):
-        #取得したdate_rangeから、スクレイピング対象urlを作成する。
-        #urlは例えば、https://race.netkeiba.com/top/calendar.html?year=2022&month=7 のような構造になっている。
+        # 取得したdate_rangeから、スクレイピング対象urlを作成する。
+        # urlは例えば、https://race.netkeiba.com/top/calendar.html?year=2022&month=7 のような構造になっている。
         query = [
             'year=' + str(year),
             'month=' + str(month),
@@ -63,7 +63,7 @@ def scrape_race_id_list(kaisai_date_list: list, from_shutuba=False, waiting_time
                 time.sleep(1)
                 a_list = driver.find_element(By.CLASS_NAME, 'RaceList_Box').find_elements(By.TAG_NAME, 'a')
             except:
-                #それでも取得できなかったらもう10秒待つ
+                # それでも取得できなかったらもう10秒待つ
                 print('waiting more {} seconds'.format(waiting_time))
                 time.sleep(waiting_time)
                 a_list = driver.find_element(By.CLASS_NAME, 'RaceList_Box').find_elements(By.TAG_NAME, 'a')

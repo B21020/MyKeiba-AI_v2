@@ -1,18 +1,17 @@
 import time
 import re
-from tkinter.tix import NoteBook
+import pandas as pd
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from tqdm.notebook import tqdm
-
 from modules.constants import UrlPaths
 from modules.constants import ResultsCols as Cols
-
 from modules.constants import Master
+from tqdm.notebook import tqdm
+
+
 
 def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     """
@@ -35,15 +34,15 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
         for tr in driver.find_elements(By.CLASS_NAME, 'HorseList'):
             row = []
             for td in tr.find_elements(By.TAG_NAME, 'td'):
-                if td.get_attribute('class') in ['HorseInfo', 'Jockey']:
+                if td.get_attribute('class') in ['HorseInfo', 'Jockey', 'Trainer']:
                     href = td.find_element(By.TAG_NAME, 'a').get_attribute('href')
                     row.append(re.findall(r'\d+', href)[0])
                 row.append(td.text)
             df = df.append(pd.Series(row), ignore_index=True)
             
         # レース結果テーブルと列を揃える
-        df = df[[0, 1, 5, 6, 11, 12, 10, 3, 7]]
-        df.columns = [Cols.WAKUBAN, Cols.UMABAN, Cols.SEX_AGE, Cols.KINRYO, Cols.TANSHO_ODDS, Cols.POPULARITY, Cols.WEIGHT_AND_DIFF, 'horse_id', 'jockey_id']
+        df = df[[0, 1, 5, 6, 12, 13, 11, 3, 7, 9]]
+        df.columns = [Cols.WAKUBAN, Cols.UMABAN, Cols.SEX_AGE, Cols.KINRYO, Cols.TANSHO_ODDS, Cols.POPULARITY, Cols.WEIGHT_AND_DIFF, 'horse_id', 'jockey_id', 'trainer_id']
         df.index = [race_id] * len(df)
         
         # レース情報の取得

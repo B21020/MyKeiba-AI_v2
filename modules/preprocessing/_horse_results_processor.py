@@ -27,7 +27,7 @@ class HorseResultsProcessor(AbstractDataProcessor):
         df[Cols.RANK] = df[Cols.RANK].astype(int)
 
         # 日付をdatetime型に設定
-        df["date"] = pd.to_datetime(df[Cols.DATE])
+        df['date'] = pd.to_datetime(df[Cols.DATE])
         df.drop([Cols.DATE], axis=1, inplace=True)
         
         # 賞金のNaNを0で埋める
@@ -90,34 +90,34 @@ class HorseResultsProcessor(AbstractDataProcessor):
         カラム抽出
         """
         df = raw.copy()[[
-            #Cols.DATE, #日付
-            Cols.PLACE, #開催
-            Cols.WEATHER, #天気
-            Cols.R, #R
-            Cols.RACE_NAME, #レース名
-            #映像
-            Cols.N_HORSES, #頭数
-            Cols.WAKUBAN, #枠番
-            Cols.UMABAN, #馬番
-            Cols.TANSHO_ODDS, #オッズ
-            Cols.POPULARITY, #人気
-            Cols.RANK, #着順
-            Cols.JOCKEY, #騎手
-            Cols.KINRYO, #斤量
-            #Cols.RACE_TYPE_COURSE_LEN, #距離
-            Cols.GROUND_STATE, #馬場
-            #馬場指数
-            #Cols.TIME, #タイム
-            Cols.RANK_DIFF, #着差
-            #ﾀｲﾑ指数
-            Cols.CORNER, #通過
-            Cols.PACE, #ペース
-            Cols.NOBORI, #上り
-            Cols.WEIGHT_AND_DIFF, #馬体重
-            #厩舎ｺﾒﾝﾄ
-            #備考
-            #勝ち馬(2着馬)
-            Cols.PRIZE, #賞金
+            #Cols.DATE, # 日付
+            Cols.PLACE, # 開催
+            Cols.WEATHER, # 天気
+            Cols.R, # R
+            Cols.RACE_NAME, # レース名
+            # 映像
+            Cols.N_HORSES, # 頭数
+            Cols.WAKUBAN, # 枠番
+            Cols.UMABAN, # 馬番
+            Cols.TANSHO_ODDS, # オッズ
+            Cols.POPULARITY, # 人気
+            Cols.RANK, # 着順
+            Cols.JOCKEY, # 騎手
+            Cols.KINRYO, # 斤量
+            #Cols.RACE_TYPE_COURSE_LEN, # 距離
+            Cols.GROUND_STATE, # 馬場
+            # 馬場指数
+            #Cols.TIME, # タイム
+            Cols.RANK_DIFF, # 着差
+            # ﾀｲﾑ指数
+            Cols.CORNER, # 通過
+            Cols.PACE, # ペース
+            Cols.NOBORI, # 上り
+            Cols.WEIGHT_AND_DIFF, # 馬体重
+            # 厩舎ｺﾒﾝﾄ
+            # 備考
+            # 勝ち馬(2着馬)
+            Cols.PRIZE, # 賞金
             'date',
             'first_corner',
             'final_corner',
