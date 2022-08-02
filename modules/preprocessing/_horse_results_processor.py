@@ -28,7 +28,6 @@ class HorseResultsProcessor(AbstractDataProcessor):
 
         # 日付をdatetime型に設定
         df['date'] = pd.to_datetime(df[Cols.DATE])
-        df.drop([Cols.DATE], axis=1, inplace=True)
         
         # 賞金のNaNを0で埋める
         df[Cols.PRIZE].fillna(0, inplace=True)
@@ -60,8 +59,6 @@ class HorseResultsProcessor(AbstractDataProcessor):
         df['race_type'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\D+)')[0].map(Master.RACE_TYPE_DICT)
         # 距離は10の位を切り捨てる（数字の文字列を抽出）
         df['course_len'] = df[Cols.RACE_TYPE_COURSE_LEN].str.extract(r'(\d+)').astype(float) // 100
-        # 距離列を削除
-        df.drop([Cols.RACE_TYPE_COURSE_LEN], axis=1, inplace=True)
 
         # タイムの値を秒単位に変換
         # 準備
@@ -81,6 +78,7 @@ class HorseResultsProcessor(AbstractDataProcessor):
         # インデックス名を与える
         df.index.name = 'horse_id'
 
+        # カラム抽出
         df = self._select_columns(df)
 
         return df

@@ -25,4 +25,4 @@ class LocalPaths:
     
     ### masterディレクトリのパス
     MASTER_DIR: str = os.path.join(DATA_DIR, 'master')
-    MASTER_RAW_HORSE_RESULTS_MASTER_PATH: str = os.path.join(MASTER_DIR, 'horse_results_updated_at.csv')
+    MASTER_RAW_HORSE_RESULTS_PATH: str = os.path.join(MASTER_DIR, 'horse_results_updated_at.csv')

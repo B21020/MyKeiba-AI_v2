@@ -19,8 +19,6 @@ class HorseInfoProcessor(AbstractDataProcessor):
 
         # 生年月日をdatetime型に設定
         df['birthday'] = pd.to_datetime(df[Cols.BIRTHDAY], format="%Y年%m月%d日")
-        # 生年月日列を削除
-        df.drop([Cols.BIRTHDAY], axis=1, inplace=True)
 
         # インデックス名を与える
         df.index.name = 'horse_id'
