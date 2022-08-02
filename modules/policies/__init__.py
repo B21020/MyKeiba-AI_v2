@@ -1,2 +1,2 @@
-from .bet_policy import *
-from .score_policy import *
+from ._bet_policy import *
+from ._score_policy import *
