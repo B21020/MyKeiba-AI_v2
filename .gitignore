@@ -11,6 +11,7 @@ data/**/**/*.bin
 models/**/*.pickle
 *.pickle
 .DS_Store
+playground.ipynb
 
 # 実行結果を除外
 output/**/*.md
