@@ -251,18 +251,24 @@ def get_rawdata_horse_results(html_path_list: list):
     horse_results = {}
     for html_path in tqdm(html_path_list):
         with open(html_path, 'rb') as f:
-            # 保存してあるbinファイルを読み込む
-            html = f.read()
+            try:
+                # 保存してあるbinファイルを読み込む
+                html = f.read()
+
+                df = pd.read_html(html)[3]
+                # 受賞歴がある馬の場合、3番目に受賞歴テーブルが来るため、4番目のデータを取得する
+                if df.columns[0]=='受賞歴':
+                    df = pd.read_html(html)[4]
+
+                horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
             
-            df = pd.read_html(html)[3]
-            # 受賞歴がある馬の場合、3番目に受賞歴テーブルが来るため、4番目のデータを取得する
-            if df.columns[0]=='受賞歴':
-                df = pd.read_html(html)[4]
-                
-            horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
-            
-            df.index = [horse_id] * len(df)
-            horse_results[horse_id] = df
+                df.index = [horse_id] * len(df)
+                horse_results[horse_id] = df
+
+            # 競走データが無い場合（新馬）を飛ばす
+            except IndexError:
+                print('horse_results empty {}'.format(html_path))
+                continue
             
     # pd.DataFrame型にして一つのデータにまとめる
     horse_results_df = pd.concat([horse_results[key] for key in horse_results])
