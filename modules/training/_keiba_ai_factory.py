@@ -7,7 +7,7 @@ from ._data_splitter import DataSplitter
 
 class KeibaAIFactory:
     """
-    KeibaAIのインスタンスを作成するための
+    KeibaAIのインスタンスを作成するためのクラス
     """
     @staticmethod
     def create(featured_data, test_size = 0.3, valid_size = 0.3) -> KeibaAI:
