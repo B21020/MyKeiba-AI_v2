@@ -9,7 +9,7 @@ from modules.constants import ResultsCols
 
 class ModelWrapper:
     """
-    データ分割・ハイパーパラメータチューニング・学習の処理が記述されたクラス。
+    モデルのハイパーパラメータチューニング・学習の処理が記述されたクラス。
     """
     def __init__(self):
         self.__lgb_model = lgb.LGBMClassifier(objective='binary')
@@ -38,10 +38,6 @@ class ModelWrapper:
             }
         
         self.__lgb_model.set_params(**tunedParams)
-        
-    """@property
-    def datasets(self):
-        return self.__datasets"""
     
     @property
     def params(self):
