@@ -5,6 +5,12 @@
 （注）ローカルで編集をしてPull requestを送る場合、このリポジトリへは直接pushできないので、forkしたリポジトリをcloneし、作業を行ってください。
 forkしたリポジトリへpushすることで、その後、本リポジトリにPull requestを送ることができます。
 
+# 環境
+本リポジトリのコードは以下の環境で開発されました
+- OS: MacOS 12.3.1
+- IDE: Visual Studio Code 1.70.1
+- 言語: Python 3.8.5
+
 # データフロー図(作成中)
 ## 全体図
 ![DFD drawio](images/DFD.drawio.png)
