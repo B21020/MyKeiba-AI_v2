@@ -7,11 +7,4 @@ selenium
 scikit-learn
 lightgbm
 optuna
-
 jupyterlab
-jupyterlab-vim
-
-black
-flake8
-isort
-mypy
