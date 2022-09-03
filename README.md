@@ -11,6 +11,14 @@ forkしたリポジトリへpushすることで、その後、本リポジトリ
 - IDE: Visual Studio Code 1.70.1
 - 言語: Python 3.8.5
 
+# 必要なライブラリをインストール
+本リポジトリは以下のコマンドで必要なPythonライブラリをインストールします。
+(wheelはlightbgmをインストールするために必要です。)
+```
+pip install wheel
+pip install -r requirements.txt
+```
+
 # データフロー図(作成中)
 ## 全体図
 ![DFD drawio](images/DFD.drawio.png)

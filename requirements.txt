@@ -1,0 +1,13 @@
+numpy
+pandas
+matplotlib
+tqdm
+beautifulsoup4
+requests
+dill
+selenium
+scikit-learn
+lightgbm
+optuna
+jupyterlab
+ipywidgets
