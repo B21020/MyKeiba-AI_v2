@@ -3,14 +3,12 @@ import re
 import pandas as pd
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 from modules.constants import UrlPaths
 from modules.constants import ResultsCols as Cols
 from modules.constants import Master
 from tqdm.notebook import tqdm
-
+from modules import preparing
 
 
 def scrape_shutuba_table(race_id: str, date: str, file_path: str):
@@ -18,11 +16,7 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     当日の出馬表をスクレイピング。
     dateはyyyy/mm/ddの形式。
     """
-    options = Options()
-    options.add_argument('--headless') #ヘッドレスモード（ブラウザが立ち上がらない）
-    driver = webdriver.Chrome(options=options)
-    #画面サイズをなるべく小さくし、余計な画像などを読み込まないようにする
-    driver.set_window_size(50, 50)
+    driver = preparing.scrape_chrome_driver()
     query = '?race_id=' + race_id
     url = UrlPaths.SHUTUBA_TABLE + query
     df = pd.DataFrame()
@@ -96,6 +90,7 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
         df['date'] = [date] * len(df)
     except Exception as e:
         print(e)
+    finally:
         driver.close()
     df.to_pickle(file_path)
     
