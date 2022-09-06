@@ -91,7 +91,7 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     except Exception as e:
         print(e)
     finally:
-        driver.close()
+        driver.quit()
     df.to_pickle(file_path)
     
 def scrape_horse_id_list(race_id_list: list) -> list:

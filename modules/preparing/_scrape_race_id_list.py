@@ -78,5 +78,5 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
         except Exception as e:
             print(e)
             break
-    driver.close()
+    driver.quit()
     return race_id_list
