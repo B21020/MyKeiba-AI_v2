@@ -3,33 +3,26 @@ import re
 import pandas as pd
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 from modules.constants import UrlPaths
 from modules.constants import ResultsCols as Cols
 from modules.constants import Master
 from tqdm.notebook import tqdm
-
-
+from ._prepare_chrome_driver import prepare_chrome_driver
 
 def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     """
     当日の出馬表をスクレイピング。
     dateはyyyy/mm/ddの形式。
     """
-    options = Options()
-    options.add_argument('--headless') #ヘッドレスモード（ブラウザが立ち上がらない）
-    driver = webdriver.Chrome(options=options)
-    #画面サイズをなるべく小さくし、余計な画像などを読み込まないようにする
-    driver.set_window_size(50, 50)
+    driver = prepare_chrome_driver()
     query = '?race_id=' + race_id
     url = UrlPaths.SHUTUBA_TABLE + query
     df = pd.DataFrame()
     try:
         driver.get(url)
         time.sleep(1)
-        
+
         # メインのテーブルの取得
         for tr in driver.find_elements(By.CLASS_NAME, 'HorseList'):
             row = []
@@ -39,12 +32,12 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
                     row.append(re.findall(r'\d+', href)[0])
                 row.append(td.text)
             df = df.append(pd.Series(row), ignore_index=True)
-            
+
         # レース結果テーブルと列を揃える
         df = df[[0, 1, 5, 6, 12, 13, 11, 3, 7, 9]]
         df.columns = [Cols.WAKUBAN, Cols.UMABAN, Cols.SEX_AGE, Cols.KINRYO, Cols.TANSHO_ODDS, Cols.POPULARITY, Cols.WEIGHT_AND_DIFF, 'horse_id', 'jockey_id', 'trainer_id']
         df.index = [race_id] * len(df)
-        
+
         # レース情報の取得
         texts = driver.find_element(By.CLASS_NAME, 'RaceList_Item02').text
         texts = re.findall(r'\w+', texts)
@@ -96,7 +89,8 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
         df['date'] = [date] * len(df)
     except Exception as e:
         print(e)
-        driver.close()
+    finally:
+        driver.quit()
     df.to_pickle(file_path)
     
 def scrape_horse_id_list(race_id_list: list) -> list:

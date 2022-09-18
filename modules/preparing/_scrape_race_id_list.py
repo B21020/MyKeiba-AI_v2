@@ -1,15 +1,14 @@
 import pandas as pd
+import datetime
 import time
 import re
 from tqdm.notebook import tqdm
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 
 from modules.constants import UrlPaths
-
+from ._prepare_chrome_driver import prepare_chrome_driver
 
 def scrape_kaisai_date(from_: str, to_: str):
     """
@@ -36,7 +35,7 @@ def scrape_kaisai_date(from_: str, to_: str):
         for a in a_list:
             kaisai_date_list.append(re.findall('(?<=kaisai_date=)\d+', a['href'])[0])
     return kaisai_date_list
-    
+
 def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
     """
     開催日をyyyymmddの文字列形式でリストで入れると、レースid一覧が返ってくる関数。
@@ -45,11 +44,9 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
     """
     now_date = datetime.datetime.now().date().strftime('%Y%m%d')
     race_id_list = []
-    options = Options()
-    options.add_argument('--headless') #ヘッドレスモード（ブラウザが立ち上がらない）
-    driver = webdriver.Chrome(options=options)
-    #画面サイズをなるべく小さくし、余計な画像などを読み込まないようにする
-    driver.set_window_size(8, 8)
+    driver = prepare_chrome_driver()
+    max_attempt = 2
+    sleep_seconds = 1
     print('getting race_id_list')
     for kaisai_date in tqdm(kaisai_date_list):
         try:
@@ -59,15 +56,18 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
             url = UrlPaths.RACE_LIST_URL + '?' + '&'.join(query)
             print('scraping: {}'.format(url))
             driver.get(url)
-            try:
-                # 取得し終わらないうちに先に進んでしまうのを防ぐ
-                time.sleep(1)
-                a_list = driver.find_element(By.CLASS_NAME, 'RaceList_Box').find_elements(By.TAG_NAME, 'a')
-            except:
-                # それでも取得できなかったらもう10秒待つ
-                print('waiting more {} seconds'.format(waiting_time))
-                time.sleep(waiting_time)
-                a_list = driver.find_element(By.CLASS_NAME, 'RaceList_Box').find_elements(By.TAG_NAME, 'a')
+
+            for i in range(1, max_attempt):
+                try:
+                    # 取得し終わらないうちに先に進んでしまうのを防ぐ
+                    time.sleep(sleep_seconds)
+                    a_list = driver.find_element(By.CLASS_NAME, 'RaceList_Box').find_elements(By.TAG_NAME, 'a')
+                except Exception as e:
+                    # それでも取得できなかったらもう10秒待つ
+                    print('error:{e} retry:{i}/{max} waiting more {secondstime} seconds'.format(
+                        e = e, i = i, max = max_attempt, secondstime = waiting_time))
+                    sleep_seconds = waiting_time
+
             for a in a_list:
                 if kaisai_date >= now_date:
                     race_id = re.findall('(?<=shutuba.html\?race_id=)\d+', a.get_attribute('href'))
@@ -78,5 +78,5 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
         except Exception as e:
             print(e)
             break
-    driver.close()
+    driver.quit()
     return race_id_list
