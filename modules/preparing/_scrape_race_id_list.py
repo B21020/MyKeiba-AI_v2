@@ -8,7 +8,7 @@ from urllib.request import urlopen
 from selenium.webdriver.common.by import By
 
 from modules.constants import UrlPaths
-from modules import preparing
+from ._prepare_chrome_driver import prepare_chrome_driver
 
 def scrape_kaisai_date(from_: str, to_: str):
     """
@@ -35,7 +35,7 @@ def scrape_kaisai_date(from_: str, to_: str):
         for a in a_list:
             kaisai_date_list.append(re.findall('(?<=kaisai_date=)\d+', a['href'])[0])
     return kaisai_date_list
-    
+
 def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
     """
     開催日をyyyymmddの文字列形式でリストで入れると、レースid一覧が返ってくる関数。
@@ -44,8 +44,8 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
     """
     now_date = datetime.datetime.now().date().strftime('%Y%m%d')
     race_id_list = []
-    driver = preparing.scrape_chrome_driver()
-    retry_count = 1
+    driver = prepare_chrome_driver()
+    max_attempt = 2
     sleep_seconds = 1
     print('getting race_id_list')
     for kaisai_date in tqdm(kaisai_date_list):
@@ -57,7 +57,7 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
             print('scraping: {}'.format(url))
             driver.get(url)
 
-            for i in range(0, retry_count + 1):
+            for i in range(1, max_attempt):
                 try:
                     # 取得し終わらないうちに先に進んでしまうのを防ぐ
                     time.sleep(sleep_seconds)
@@ -65,7 +65,7 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
                 except Exception as e:
                     # それでも取得できなかったらもう10秒待つ
                     print('error:{e} retry:{i}/{max} waiting more {secondstime} seconds'.format(
-                        e = e, i = i, max = retry_count, secondstime = waiting_time))
+                        e = e, i = i, max = max_attempt, secondstime = waiting_time))
                     sleep_seconds = waiting_time
 
             for a in a_list:

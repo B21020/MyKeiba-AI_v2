@@ -1,8 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-   
-def scrape_chrome_driver():
+
+def prepare_chrome_driver():
     """
     Chromeのバージョンアップは頻繁に発生し、Webdriverとのバージョン不一致が多発するため、
     ChromeDriverManagerを使用し、自動的にバージョンを一致させる。
