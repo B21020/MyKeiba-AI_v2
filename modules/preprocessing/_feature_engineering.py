@@ -94,6 +94,8 @@ class FeatureEngineering:
             new_target['encoded_id'] = [
                 i+max(target_master['encoded_id']) for i in range(1, len(new_target)+1)
                 ]
+            # 整数に変換
+            new_target['encoded_id'] = new_target['encoded_id'].astype(int)
         else: # まだ1行も登録されていない場合の処理
             new_target['encoded_id'] = [i for i in range(len(new_target))]
         # 元のマスタと繋げる
