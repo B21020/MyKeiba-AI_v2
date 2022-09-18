@@ -11,3 +11,4 @@ lightgbm
 optuna
 jupyterlab
 ipywidgets
+webdriver-manager
