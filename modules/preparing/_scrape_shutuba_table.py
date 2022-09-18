@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from modules.constants import UrlPaths
 from modules.constants import ResultsCols as Cols
 from modules.constants import Master
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 from ._prepare_chrome_driver import prepare_chrome_driver
 
 def scrape_shutuba_table(race_id: str, date: str, file_path: str):
@@ -27,9 +27,15 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
         for tr in driver.find_elements(By.CLASS_NAME, 'HorseList'):
             row = []
             for td in tr.find_elements(By.TAG_NAME, 'td'):
-                if td.get_attribute('class') in ['HorseInfo', 'Jockey', 'Trainer']:
+                if td.get_attribute('class') in ['HorseInfo']:
                     href = td.find_element(By.TAG_NAME, 'a').get_attribute('href')
-                    row.append(re.findall(r'\d+', href)[0])
+                    row.append(re.findall(r'horse/(\d*)', href)[0])
+                elif td.get_attribute('class') in ['Jockey']:
+                    href = td.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                    row.append(re.findall(r'jockey/result/recent/(\w*)', href)[0])
+                elif td.get_attribute('class') in ['Trainer']:
+                    href = td.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                    row.append(re.findall(r'trainer/result/recent/(\w*)', href)[0])
                 row.append(td.text)
             df = df.append(pd.Series(row), ignore_index=True)
 
@@ -91,8 +97,11 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
         print(e)
     finally:
         driver.quit()
+
+    # 取消された出走馬を削除
+    df = df[df[Cols.WEIGHT_AND_DIFF] != '--']
     df.to_pickle(file_path)
-    
+
 def scrape_horse_id_list(race_id_list: list) -> list:
     """
     当日出走するhorse_id一覧を取得
