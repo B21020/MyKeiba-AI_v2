@@ -2,7 +2,7 @@ import pandas as pd
 import datetime
 import time
 import re
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from selenium.webdriver.common.by import By

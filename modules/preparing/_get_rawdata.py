@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from numpy import NaN
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 from bs4 import BeautifulSoup
 import re
 from modules.constants import Master
@@ -38,7 +38,8 @@ def get_rawdata_results(html_path_list: list):
                     "a", attrs={"href": re.compile("^/jockey")}
                 )
                 for a in jockey_a_list:
-                    jockey_id = re.findall(r"\d+", a["href"])
+                    #'jockey/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
+                    jockey_id = re.findall(r"jockey/result/recent/(\w*)", a["href"])
                     jockey_id_list.append(jockey_id[0])
                 df["jockey_id"] = jockey_id_list
 
@@ -48,7 +49,8 @@ def get_rawdata_results(html_path_list: list):
                     "a", attrs={"href": re.compile("^/trainer")}
                 )
                 for a in trainer_a_list:
-                    trainer_id = re.findall(r"\d+", a["href"])
+                    #'trainer/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
+                    trainer_id = re.findall(r"trainer/result/recent/(\w*)", a["href"])
                     trainer_id_list.append(trainer_id[0])
                 df["trainer_id"] = trainer_id_list
 
@@ -58,7 +60,8 @@ def get_rawdata_results(html_path_list: list):
                     "a", attrs={"href": re.compile("^/owner")}
                 )
                 for a in owner_a_list:
-                    owner_id = re.findall(r"\d+", a["href"])
+                    #'owner/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
+                    owner_id = re.findall(r"owner/result/recent/(\w*)", a["href"])
                     owner_id_list.append(owner_id[0])
                 df["owner_id"] = owner_id_list
 
@@ -86,7 +89,7 @@ def get_rawdata_info(html_path_list: list):
             try:
                 # 保存してあるbinファイルを読み込む
                 html = f.read()
-                
+
                 # htmlをsoupオブジェクトに変換
                 soup = BeautifulSoup(html, "lxml")
 
@@ -104,7 +107,7 @@ def get_rawdata_info(html_path_list: list):
                         df["race_type"] = [text]
                     if "障" in text:
                         df["race_type"] = ["障害"]
-                        hurdle_race_flg = True      
+                        hurdle_race_flg = True
                     if "m" in text:
                         # 20211212：[0]→[-1]に修正
                         df["course_len"] = [int(re.findall(r"\d+", text)[-1])]
@@ -162,13 +165,13 @@ def get_rawdata_return(html_path_list: list):
             try:
                 # 保存してあるbinファイルを読み込む
                 html = f.read()
-                
+
                 html = html.replace(b'<br />', b'br')
                 dfs = pd.read_html(html)
 
                 # dfsの1番目に単勝〜馬連、2番目にワイド〜三連単がある
                 df = pd.concat([dfs[1], dfs[2]])
-                
+
                 race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
                 race_return[race_id] = df
@@ -202,7 +205,7 @@ def get_rawdata_horse_info(html_path_list: list):
                 trainer_a_list = soup.find("table", attrs={"summary": "のプロフィール"}).find_all(
                     "a", attrs={"href": re.compile("^/trainer")}
                 )
-                trainer_id = re.findall(r"\d+", trainer_a_list[0]["href"])[0]
+                trainer_id = re.findall(r"trainer/(\w*)", trainer_a_list[0]["href"])[0]
             except IndexError:
                 # 調教師IDを取得できない場合
                 #print('trainer_id empty {}'.format(html_path))
@@ -214,7 +217,7 @@ def get_rawdata_horse_info(html_path_list: list):
                 owner_a_list = soup.find("table", attrs={"summary": "のプロフィール"}).find_all(
                     "a", attrs={"href": re.compile("^/owner")}
                 )
-                owner_id = re.findall(r"\d+", owner_a_list[0]["href"])[0]
+                owner_id = re.findall(r"owner/(\w*)", owner_a_list[0]["href"])[0]
             except IndexError:
                 # 馬主IDを取得できない場合
                 #print('owner_id empty {}'.format(html_path))
@@ -226,7 +229,7 @@ def get_rawdata_horse_info(html_path_list: list):
                 breeder_a_list = soup.find("table", attrs={"summary": "のプロフィール"}).find_all(
                     "a", attrs={"href": re.compile("^/breeder")}
                 )
-                breeder_id = re.findall(r"\d+", breeder_a_list[0]["href"])[0]
+                breeder_id = re.findall(r"breeder/(\w*)", breeder_a_list[0]["href"])[0]
             except IndexError:
                 # 生産者IDを取得できない場合
                 #print('breeder_id empty {}'.format(html_path))
@@ -261,7 +264,7 @@ def get_rawdata_horse_results(html_path_list: list):
                     df = pd.read_html(html)[4]
 
                 horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
-            
+
                 df.index = [horse_id] * len(df)
                 horse_results[horse_id] = df
 
@@ -269,7 +272,7 @@ def get_rawdata_horse_results(html_path_list: list):
             except IndexError:
                 print('horse_results empty {}'.format(html_path))
                 continue
-            
+
     # pd.DataFrame型にして一つのデータにまとめる
     horse_results_df = pd.concat([horse_results[key] for key in horse_results])
     return horse_results_df

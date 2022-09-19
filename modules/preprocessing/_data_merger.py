@@ -4,7 +4,7 @@ from ._horse_info_processor import HorseInfoProcessor
 from ._peds_processor import PedsProcessor
 from ._race_info_processor import RaceInfoProcessor
 from ._results_processor import ResultsProcessor
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
 class DataMerger:
     def __init__(

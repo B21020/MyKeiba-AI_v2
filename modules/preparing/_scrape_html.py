@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import time
 import os
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 from urllib.request import urlopen
 
 from modules.constants import UrlPaths, LocalPaths
