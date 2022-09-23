@@ -36,15 +36,16 @@ def scrape_kaisai_date(from_: str, to_: str):
             kaisai_date_list.append(re.findall('(?<=kaisai_date=)\d+', a['href'])[0])
     return kaisai_date_list
 
-def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
+def scrape_race_id_list(kaisai_date_list: list, waiting_time = 10):
     """
     開催日をyyyymmddの文字列形式でリストで入れると、レースid一覧が返ってくる関数。
-    関数内にて日付を取得し、レース前日準備のためrace_idを取得するかを自動判定を行う。
-    ChromeDriverは要素を取得し終わらないうちに先に進んでしまうことがあるので、その場合の待機時間をwaiting_timeで指定。
+    ChromeDriverは要素を取得し終わらないうちに先に進んでしまうことがあるので、
+    暗黙的な待機時間をwaiting_timeで指定。
     """
-    now_date = datetime.datetime.now().date().strftime('%Y%m%d')
     race_id_list = []
     driver = prepare_chrome_driver()
+    # 取得し終わらないうちに先に進んでしまうのを防ぐため、暗黙的な待機（デフォルト10秒）
+    driver.implicitly_wait(waiting_time)
     max_attempt = 2
     sleep_seconds = 1
     print('getting race_id_list')
@@ -59,24 +60,21 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
 
             for i in range(1, max_attempt):
                 try:
-                    # 取得し終わらないうちに先に進んでしまうのを防ぐ
-                    time.sleep(sleep_seconds)
                     a_list = driver.find_element(By.CLASS_NAME, 'RaceList_Box').find_elements(By.TAG_NAME, 'a')
                 except Exception as e:
-                    # それでも取得できなかったらもう10秒待つ
+                    # 取得できない場合は、リトライを実施
                     print('error:{e} retry:{i}/{max} waiting more {secondstime} seconds'.format(
-                        e = e, i = i, max = max_attempt, secondstime = waiting_time))
-                    sleep_seconds = waiting_time
+                        e = e, i = i, max = max_attempt, secondstime = sleep_seconds))
 
             for a in a_list:
-                if kaisai_date >= now_date:
-                    race_id = re.findall('(?<=shutuba.html\?race_id=)\d+', a.get_attribute('href'))
-                else:
-                    race_id = re.findall('(?<=result.html\?race_id=)\d+', a.get_attribute('href'))
+                race_id = re.findall('(?<=shutuba.html\?race_id=)\d+|(?<=result.html\?race_id=)\d+',
+                    a.get_attribute('href'))
                 if len(race_id) > 0:
                     race_id_list.append(race_id[0])
         except Exception as e:
             print(e)
             break
+
+    driver.close()
     driver.quit()
     return race_id_list
