@@ -40,7 +40,7 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time = 10):
     """
     開催日をyyyymmddの文字列形式でリストで入れると、レースid一覧が返ってくる関数。
     ChromeDriverは要素を取得し終わらないうちに先に進んでしまうことがあるので、
-    暗黙的な待機時間をwaiting_timeで指定。
+    要素が見つかるまで(ロードされるまで)の待機時間をwaiting_timeで指定。
     """
     race_id_list = []
     driver = prepare_chrome_driver()
