@@ -61,6 +61,7 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time = 10):
             for i in range(1, max_attempt):
                 try:
                     a_list = driver.find_element(By.CLASS_NAME, 'RaceList_Box').find_elements(By.TAG_NAME, 'a')
+                    break
                 except Exception as e:
                     # 取得できない場合は、リトライを実施
                     print('error:{e} retry:{i}/{max} waiting more {secondstime} seconds'.format(
