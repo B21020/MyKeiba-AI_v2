@@ -23,6 +23,7 @@ def _apply_scaler(score: pd.Series, scaler: Callable[[pd.Series], pd.Series]) ->
 
 # scalers
 _scaler_standard = lambda x: (x - x.mean()) / x.std(ddof=0)
+_scaler_relative_proba = lambda x: x / x.sum()
 
 
 # policies
@@ -62,4 +63,15 @@ class MinMaxScorePolicy(AbstractScorePolicy):
         # データ全体で0~1にスケーリング
         min_ = score.min()
         score_table[SCORE] = (score - min_) / (score.max() - min_)
+        return score_table
+
+class RelativeProbaScorePolicy(AbstractScorePolicy):
+    """
+    レース内での相対確率。
+    """
+    @staticmethod
+    def calc(model, X: pd.DataFrame) -> pd.DataFrame:
+        score_table = _calc(model, X)
+        # レース内でスコアを相対確率化
+        score_table[SCORE] = _apply_scaler(score_table[SCORE], _scaler_relative_proba)
         return score_table
