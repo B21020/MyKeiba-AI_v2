@@ -18,7 +18,7 @@ def _calc(model, X: pd.DataFrame) -> pd.DataFrame:
     return score_table
 
 def _apply_scaler(score: pd.Series, scaler: Callable[[pd.Series], pd.Series]) -> pd.Series:
-    return score.groupby(level=0).apply(scaler)
+    return score.groupby(level=0, group_keys=False).apply(scaler)
 
 
 # scalers
