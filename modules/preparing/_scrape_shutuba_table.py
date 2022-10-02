@@ -16,12 +16,13 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     dateはyyyy/mm/ddの形式。
     """
     driver = prepare_chrome_driver()
+    # 取得し終わらないうちに先に進んでしまうのを防ぐため、暗黙的な待機（デフォルト10秒）
+    driver.implicitly_wait(10)
     query = '?race_id=' + race_id
     url = UrlPaths.SHUTUBA_TABLE + query
     df = pd.DataFrame()
     try:
         driver.get(url)
-        time.sleep(1)
 
         # メインのテーブルの取得
         for tr in driver.find_elements(By.CLASS_NAME, 'HorseList'):
@@ -96,6 +97,7 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     except Exception as e:
         print(e)
     finally:
+        driver.close()
         driver.quit()
 
     # 取消された出走馬を削除
