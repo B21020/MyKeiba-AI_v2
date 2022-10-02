@@ -5,7 +5,7 @@ tqdm
 beautifulsoup4
 requests
 dill
-selenium
+selenium >= 4.0.0
 scikit-learn
 lightgbm
 optuna

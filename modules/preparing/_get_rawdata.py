@@ -76,6 +76,9 @@ def get_rawdata_results(html_path_list: list):
     # pd.DataFrame型にして一つのデータにまとめる
     race_results_df = pd.concat([race_results[key] for key in race_results])
 
+    # 列名に半角スペースがあれば除去する
+    race_results_df = race_results_df.rename(columns=lambda x: x.replace(' ', ''))
+
     return race_results_df
 
 def get_rawdata_info(html_path_list: list):
@@ -275,6 +278,10 @@ def get_rawdata_horse_results(html_path_list: list):
 
     # pd.DataFrame型にして一つのデータにまとめる
     horse_results_df = pd.concat([horse_results[key] for key in horse_results])
+
+    # 列名に半角スペースがあれば除去する
+    horse_results_df = horse_results_df.rename(columns=lambda x: x.replace(' ', ''))
+
     return horse_results_df
 
 def get_rawdata_peds(html_path_list: list):
