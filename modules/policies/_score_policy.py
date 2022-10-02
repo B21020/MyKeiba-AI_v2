@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractstaticmethod
+from abc import ABCMeta, abstractmethod
 from typing import Callable
 
 import pandas as pd
@@ -28,7 +28,8 @@ _scaler_relative_proba = lambda x: x / x.sum()
 
 # policies
 class AbstractScorePolicy(metaclass=ABCMeta):
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def calc(model, X: pd.DataFrame) -> pd.DataFrame:
         raise NotImplementedError
 
