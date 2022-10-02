@@ -7,14 +7,14 @@ from modules.constants import ResultsCols
 
 
 # const
-SCORE = 'score'
+_SCORE = 'score'
 
 
 # common funcs
 def _calc(model, X: pd.DataFrame) -> pd.DataFrame:
     score_table = X[[ResultsCols.UMABAN, ResultsCols.TANSHO_ODDS]].copy()
     score = model.predict_proba(X.drop([ResultsCols.TANSHO_ODDS], axis=1))[:, 1]
-    score_table[SCORE] = score
+    score_table[_SCORE] = score
     return score_table
 
 def _apply_scaler(score: pd.Series, scaler: Callable[[pd.Series], pd.Series]) -> pd.Series:
@@ -48,7 +48,7 @@ class StdScorePolicy(AbstractScorePolicy):
     def calc(model, X: pd.DataFrame) -> pd.DataFrame:
         score_table = _calc(model, X)
         # レース内でスコアを標準化
-        score_table[SCORE] = _apply_scaler(score_table[SCORE], _scaler_standard)
+        score_table[_SCORE] = _apply_scaler(score_table[_SCORE], _scaler_standard)
         return score_table
 
 class MinMaxScorePolicy(AbstractScorePolicy):
@@ -59,10 +59,10 @@ class MinMaxScorePolicy(AbstractScorePolicy):
     def calc(model, X: pd.DataFrame) -> pd.DataFrame:
         score_table = _calc(model, X)
         # レース内でスコアを標準化
-        score = _apply_scaler(score_table[SCORE], _scaler_standard)
+        score = _apply_scaler(score_table[_SCORE], _scaler_standard)
         # データ全体で0~1にスケーリング
         min_ = score.min()
-        score_table[SCORE] = (score - min_) / (score.max() - min_)
+        score_table[_SCORE] = (score - min_) / (score.max() - min_)
         return score_table
 
 class RelativeProbaScorePolicy(AbstractScorePolicy):
@@ -73,5 +73,5 @@ class RelativeProbaScorePolicy(AbstractScorePolicy):
     def calc(model, X: pd.DataFrame) -> pd.DataFrame:
         score_table = _calc(model, X)
         # レース内でスコアを相対確率化
-        score_table[SCORE] = _apply_scaler(score_table[SCORE], _scaler_relative_proba)
+        score_table[_SCORE] = _apply_scaler(score_table[_SCORE], _scaler_relative_proba)
         return score_table
