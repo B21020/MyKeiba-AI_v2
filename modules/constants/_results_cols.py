@@ -5,9 +5,9 @@ class ResultsCols:
     """
     サイト上のテーブル列名を、定数として持っておく。
     """
-    RANK: str = '着 順'
-    WAKUBAN: str = '枠 番'
-    UMABAN: str = '馬 番'
+    RANK: str = '着順'
+    WAKUBAN: str = '枠番'
+    UMABAN: str = '馬番'
     HORSE_NAME: str = '馬名'
     SEX_AGE: str = '性齢'
     KINRYO: str = '斤量'
@@ -17,6 +17,6 @@ class ResultsCols:
     # 通過
     # 上がり
     TANSHO_ODDS: str = '単勝'
-    POPULARITY: str = '人 気'
+    POPULARITY: str = '人気'
     WEIGHT_AND_DIFF: str = '馬体重'
     TRAINER: str = '調教師'
