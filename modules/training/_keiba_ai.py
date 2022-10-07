@@ -49,16 +49,12 @@ class KeibaAI:
         score_policyを元に、馬の「勝ちやすさスコア」を計算する。
         """
         return score_policy.calc(self.__model_wrapper.lgb_model, X)
-    
-    def decide_action(
-        self,
-        X: pd.DataFrame,
-        score_policy: AbstractScorePolicy, 
-        bet_policy: AbstractBetPolicy, 
-        **params
-        ) -> dict:
+
+    def decide_action(self, score_table: pd.DataFrame,
+        bet_policy: AbstractBetPolicy, **params) -> dict:
         """
         bet_policyを元に、賭ける馬券を決定する。paramsにthresholdを入れる。
         """
-        actions = bet_policy.judge(self.calc_score(X, score_policy), **params)
+        actions = bet_policy.judge(score_table, **params)
+
         return actions
