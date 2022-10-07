@@ -38,7 +38,7 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
                     href = td.find_element(By.TAG_NAME, 'a').get_attribute('href')
                     row.append(re.findall(r'trainer/result/recent/(\w*)', href)[0])
                 row.append(td.text)
-            df = df.append(pd.Series(row), ignore_index=True)
+            df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
 
         # レース結果テーブルと列を揃える
         df = df[[0, 1, 5, 6, 12, 13, 11, 3, 7, 9]]
