@@ -266,6 +266,12 @@ def get_rawdata_horse_results(html_path_list: list):
                 if df.columns[0]=='受賞歴':
                     df = pd.read_html(html)[4]
 
+                # 新馬の競走馬レビューが付いた場合、
+                # 列名に0が付与されるため、次のhtmlへ飛ばす
+                if df.columns[0] == 0:
+                    print('horse_results empty case1 {}'.format(html_path))
+                    continue
+
                 horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
 
                 df.index = [horse_id] * len(df)
@@ -273,7 +279,7 @@ def get_rawdata_horse_results(html_path_list: list):
 
             # 競走データが無い場合（新馬）を飛ばす
             except IndexError:
-                print('horse_results empty {}'.format(html_path))
+                print('horse_results empty case2 {}'.format(html_path))
                 continue
 
     # pd.DataFrame型にして一つのデータにまとめる
