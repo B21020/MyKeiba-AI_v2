@@ -11,9 +11,6 @@ def plot_single_threshold(df, N_SAMPLES, label=' '):
         )
     # 回収率を実線でプロット
     plt.plot(df.index, df['return_rate'], label=label)
-    for i in range(10):
-        idx = i * N_SAMPLES // 10
-        plt.text(df.iloc[idx].name, df.iloc[idx]['return_rate'], str(int(df.iloc[idx]['n_bets'])))
     # labelで設定した凡例を表示させる
     plt.legend()
     # グリッドをつける
