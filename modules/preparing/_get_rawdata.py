@@ -139,10 +139,19 @@ def get_rawdata_info(html_path_list: list):
                     if "オープン" in text:
                         df["race_class"] = [Master.RACE_CLASS_LIST[5]]
 
+                # グレードレース情報の取得
+                grade_text = soup.find("div", attrs={"class": "data_intro"}).find_all("h1")[0].text
+                if "G3" in grade_text:
+                    df["race_class"] = [Master.RACE_CLASS_LIST[6]] * len(df)
+                elif "G2" in grade_text:
+                    df["race_class"] = [Master.RACE_CLASS_LIST[7]] * len(df)
+                elif "G1" in grade_text:
+                    df["race_class"] = [Master.RACE_CLASS_LIST[8]] * len(df)
+
                 # 障害レースの場合
                 if hurdle_race_flg:
                     df["around"] = [Master.AROUND_LIST[3]]
-                    df["race_class"] = [Master.RACE_CLASS_LIST[6]]
+                    df["race_class"] = [Master.RACE_CLASS_LIST[9]]
 
                 # インデックスをrace_idにする
                 race_id = re.findall('race\W(\d+).bin', html_path)[0]
