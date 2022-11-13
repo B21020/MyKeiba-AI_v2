@@ -1,4 +1,3 @@
-   
 import pandas as pd
 import lightgbm as lgb
 from sklearn.metrics import roc_auc_score
@@ -14,14 +13,14 @@ class ModelWrapper:
     def __init__(self):
         self.__lgb_model = lgb.LGBMClassifier(objective='binary')
         self.__feature_importance = None
-    
+
     def tune_hyper_params(self, datasets: DataSplitter):
         """
         optunaによるチューニングを実行。
         """
-        
+
         params = {'objective': 'binary'}
-        
+
         # チューニング実行
         lgb_clf_o = lgb_o.train(
             params,
@@ -36,19 +35,19 @@ class ModelWrapper:
         tunedParams = {
             k: v for k, v in lgb_clf_o.params.items() if k not in ['num_iterations', 'early_stopping_round']
             }
-        
+
         self.__lgb_model.set_params(**tunedParams)
-    
+
     @property
     def params(self):
         return self.__lgb_model.get_params()
-    
+
     def set_params(self, ex_params):
         """
         外部からハイパーパラメータを設定する場合。
         """
         self.__lgb_model.set_params(**ex_params)
-        
+
     def train(self, datasets: DataSplitter):
         # 学習
         self.__lgb_model.fit(datasets.X_train.values, datasets.y_train.values)
@@ -62,11 +61,11 @@ class ModelWrapper:
             )
         # 特徴量の重要度を記憶しておく
         self.__feature_importance = pd.DataFrame({
-            "features": datasets.X_train.columns, 
+            "features": datasets.X_train.columns,
             "importance": self.__lgb_model.feature_importances_
             }).sort_values("importance", ascending=False)
         print('AUC: {:.3f}(train), {:.3f}(test)'.format(auc_train, auc_test))
-    
+
     @property
     def feature_importance(self):
         return self.__feature_importance
@@ -74,7 +73,7 @@ class ModelWrapper:
     @property
     def lgb_model(self):
         return self.__lgb_model
- 
+
     @lgb_model.setter
     def lgb_model(self, loaded):
         self.__lgb_model = loaded
