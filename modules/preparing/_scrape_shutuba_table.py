@@ -88,10 +88,18 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
             if "オープン" in text:
                 df["race_class"] = [Master.RACE_CLASS_LIST[5]] * len(df)
 
+        # グレードレース情報の取得
+        if len(driver.find_elements(By.CLASS_NAME, 'Icon_GradeType3')) > 0:
+            df["race_class"] = [Master.RACE_CLASS_LIST[6]] * len(df)
+        elif len(driver.find_elements(By.CLASS_NAME, 'Icon_GradeType2')) > 0:
+            df["race_class"] = [Master.RACE_CLASS_LIST[7]] * len(df)
+        elif len(driver.find_elements(By.CLASS_NAME, 'Icon_GradeType1')) > 0:
+            df["race_class"] = [Master.RACE_CLASS_LIST[8]] * len(df)
+
         # 障害レースの場合
         if hurdle_race_flg:
             df["around"] = [Master.AROUND_LIST[3]] * len(df)
-            df["race_class"] = [Master.RACE_CLASS_LIST[6]] * len(df)
+            df["race_class"] = [Master.RACE_CLASS_LIST[9]] * len(df)
 
         df['date'] = [date] * len(df)
     except Exception as e:

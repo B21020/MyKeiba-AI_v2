@@ -76,5 +76,5 @@ class Master:
     SEX_LIST: tuple = ('牡', '牝', 'セ')
     
     AROUND_LIST: tuple = ('右', '左', '直線', '障害')
-    
-    RACE_CLASS_LIST: tuple = ('新馬', '未勝利', '1勝クラス', '2勝クラス', '3勝クラス', 'オープン', '障害')
+
+    RACE_CLASS_LIST: tuple = ('新馬', '未勝利', '1勝クラス', '2勝クラス', '3勝クラス', 'オープン', 'G3', 'G2', 'G1', '障害')
