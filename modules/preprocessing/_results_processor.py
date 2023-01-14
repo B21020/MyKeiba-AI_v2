@@ -44,6 +44,9 @@ class ResultsProcessor(AbstractDataProcessor):
         
         # カラム抽出
         df = self._select_columns(df)
+
+        # 馬番順にソート
+        df = self._sort(df)
         
         return df
         
@@ -58,6 +61,19 @@ class ResultsProcessor(AbstractDataProcessor):
         df.dropna(subset=[Cols.RANK], inplace=True)
         df[Cols.RANK] = df[Cols.RANK].astype(int)
         df['rank'] = df[Cols.RANK].map(lambda x:1 if x<4 else 0)
+        return df
+
+    def _sort(self, raw):
+        """
+        各レースを馬番順にソートする。
+        ※ 各レース内のソート。レースの順序自体はrace_idの名前順になる。
+        """
+        df = raw.copy()
+        df = df.reset_index().sort_values(['index', Cols.UMABAN]).set_index('index')
+        df.index.name = None
+        # NOTE:
+        # df.groupby(level=0, group_keys=False).apply(lambda x: x.sort_values(Cols.UMABAN))
+        # と同じ。groupbyを使う方がやや遅い。
         return df
     
     def _select_columns(self, raw):
