@@ -2,6 +2,7 @@ import optuna.integration.lightgbm as lgb_o
 
 from modules.constants import ResultsCols
 
+
 class DataSplitter:
     def __init__(self, featured_data, test_size, valid_size) -> None:
         self.__featured_data = featured_data
@@ -14,7 +15,7 @@ class DataSplitter:
         self.__train_data, self.__test_data = self.__split_by_date(self.__featured_data, test_size=test_size)
         self.__train_data_optuna, self.__valid_data_optuna = self.__split_by_date(
             self.__train_data, test_size=valid_size
-            )
+        )
         self.__lgb_train_optuna = lgb_o.Dataset(
             self.__train_data_optuna.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1).values,
             self.__train_data_optuna['rank']
@@ -23,10 +24,10 @@ class DataSplitter:
             self.__valid_data_optuna.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1).values,
             self.__valid_data_optuna['rank']
         )
-        #説明変数と目的変数に分ける。開催はエラーなるので一度drop。
+        # 説明変数と目的変数に分ける。開催はエラーなるので一度drop。
         self.__X_train = self.__train_data.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1)
         self.__y_train = self.__train_data['rank']
-        self.__X_test = self.__test_data.drop(['rank', 'date'], axis=1)
+        self.__X_test = self.__test_data.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1)
         self.__y_test = self.__test_data['rank']
 
     def __split_by_date(self, df, test_size):
@@ -83,3 +84,7 @@ class DataSplitter:
     @property
     def y_test(self):
         return self.__y_test
+
+    @property
+    def tansho_odds_test(self):
+        return self.__test_data[ResultsCols.TANSHO_ODDS]
