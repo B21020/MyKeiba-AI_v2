@@ -23,7 +23,7 @@ class DataSplitter:
             self.__valid_data_optuna.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1).values,
             self.__valid_data_optuna['rank']
         )
-        #説明変数と目的変数に分ける。開催はエラーなるので一度drop。
+        # 説明変数と目的変数に分ける。開催はエラーなるので一度drop。
         self.__X_train = self.__train_data.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1)
         self.__y_train = self.__train_data['rank']
         self.__X_test = self.__test_data.drop(['rank', 'date'], axis=1)
