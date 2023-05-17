@@ -12,8 +12,8 @@ _SCORE = 'score'
 
 # common funcs
 def _calc(model, X: pd.DataFrame) -> pd.DataFrame:
-    score_table = X[[ResultsCols.UMABAN, ResultsCols.TANSHO_ODDS]].copy()
-    score = model.predict_proba(X.drop([ResultsCols.TANSHO_ODDS], axis=1))[:, 1]
+    score_table = X[ResultsCols.UMABAN].to_frame().copy()
+    score = model.predict_proba(X)[:, 1]
     score_table[_SCORE] = score
     return score_table
 
