@@ -19,7 +19,7 @@ pip install wheel
 pip install -r requirements.txt
 ```
 
-# データフロー図(作成中)
+# データフロー図
 ## 全体図
 ![DFD drawio](images/DFD.drawio.png)
 
@@ -27,8 +27,21 @@ pip install -r requirements.txt
 スクレイピング部分の処理詳細
 ![DFD_preparing drawio](images/DFD_preparing.drawio.png)
 
-# ライセンスについて
-- レポジトリや書籍に掲載されているソースコードにつきまして、コミュニティ外部への転載・再配布はお控えください。
+# ライセンス・免責事項
+- レポジトリや書籍に掲載されているソースコードにつきまして、運営者の許諾なしにコンテンツの全部または一部を転載・再配布することはお控えください。
 - ソースコードの加筆修正や、コミュニティ内における共有は可とします。
 - ソースコード以外の共有（買い目や予測モデル構築ステップなど）につきましては、コミュニティ外部への共有であっても可とします。（その場合、書籍をご紹介いただけると幸いです。）
-- Pull requestによって変更されたソースコードは、コミュニティ内で共有される他、書籍に反映され、YouTube動画でも公開される可能性がありますのでご了承ください。
+- 情報の正確さ、安全性の向上、不都合に対するサポートなどに対しては可能な限り力をいれておりますが、利用者が書籍やリポジトリを利用して生じた損害に関して、運営者は責任を負わないものとします。
+
+# スクレイピング時の注意点
+for文の中などで、複数ページに渡るスクレイピングを行う際は、**サーバーに負荷をかけないように1アクセスごとに必ず`time.sleep(1)`などで1秒間以上の待機時間を入れるようにしてください**。（[「健全なスクレイピング」だと判断](http://librahack.jp/wp-content/uploads/announcement-20110225.pdf)された[過去事例](http://librahack.jp/okazaki-library-case/stress-test-thinking.html)）
+```python
+for race_id in race_id_list:
+    # 待機時間を入れる
+    time.sleep(1)
+    url = "https://db.netkeiba.com/race/" + race_id
+    html = requests.get(url)
+    # 以下省略
+```
+
+特に、自分でカスタマイズしてコードを書いている時などは、`time.sleep(1)`が抜けてしまわないようにスクレイピング前に確認をお願いします。（netkeiba.comはAkamaiというサービスを利用しており、悪質なスクレイパー扱いをされるとAkamaiを利用している他のサイトにも一時的にアクセスできなくなる場合があるようなので、注意しましょう。）
