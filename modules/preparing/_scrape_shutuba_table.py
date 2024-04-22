@@ -51,7 +51,7 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
         # 障害レースフラグを初期化
         hurdle_race_flg = False
         for text in texts:
-            if 'm' in text:
+            if '0m' in text:
                 # 20211212：[0]→[-1]に修正
                 df['course_len'] = [int(re.findall(r'\d+', text)[-1])] * len(df)
             if text in Master.WEATHER_LIST:
