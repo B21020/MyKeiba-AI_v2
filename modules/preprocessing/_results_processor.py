@@ -57,9 +57,10 @@ class ResultsProcessor(AbstractDataProcessor):
         """
         df = raw.copy()
         # 着順に数字以外の文字列が含まれているものを取り除く
-        df[Cols.RANK] = pd.to_numeric(df[Cols.RANK], errors='coerce')
-        df.dropna(subset=[Cols.RANK], inplace=True)
-        df[Cols.RANK] = df[Cols.RANK].astype(int)
+        # 取消を-1にし、数字以外の文字列を0に置換する
+        df[Cols.RANK] = df[Cols.RANK].apply(lambda x: x if str(x).isdigit() else (-1 if x == "取消" else 0)).astype(int)
+        # -1(取消)を取り除く
+        df = df[df[Cols.RANK] != -1]
         df['rank'] = df[Cols.RANK].map(lambda x:1 if x<4 else 0)
         return df
 
