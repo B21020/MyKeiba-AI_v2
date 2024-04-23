@@ -61,7 +61,8 @@ class ResultsProcessor(AbstractDataProcessor):
         df[Cols.RANK] = df[Cols.RANK].apply(lambda x: x if str(x).isdigit() else (-1 if x == "取消" else 0)).astype(int)
         # -1(取消)を取り除く
         df = df[df[Cols.RANK] != -1]
-        df['rank'] = df[Cols.RANK].map(lambda x:1 if x<4 else 0)
+        df['rank'] = df[Cols.RANK].map(lambda x:1 if x>0 and x<4 else 0)
+        print(df)
         return df
 
     def _sort(self, raw):
