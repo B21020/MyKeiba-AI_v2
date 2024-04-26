@@ -26,8 +26,10 @@ class ModelWrapper:
             params,
             datasets.lgb_train_optuna,
             valid_sets=(datasets.lgb_train_optuna, datasets.lgb_valid_optuna),
-            verbose_eval=100,
-            early_stopping_rounds=10,
+            callbacks=[
+                lgb.callback.log_evaluation(period=100),  # 100イテレーションごとに評価結果を出力
+                lgb.callback.early_stopping(stopping_rounds=10)  # 早期停止パラメータ、verboseはデフォルトtrueのため指定不要
+                ],
             optuna_seed=100 # optunaのseed固定
             )
 
