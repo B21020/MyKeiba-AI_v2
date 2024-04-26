@@ -111,7 +111,7 @@ def get_rawdata_info(html_path_list: list):
                     if "障" in text:
                         df["race_type"] = ["障害"]
                         hurdle_race_flg = True
-                    if "m" in text:
+                    if "0m" in text:
                         # 20211212：[0]→[-1]に修正
                         df["course_len"] = [int(re.findall(r"\d+", text)[-1])]
                     if text in Master.GROUND_STATE_LIST:
