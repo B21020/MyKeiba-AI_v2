@@ -1,9 +1,8 @@
-import dataclasses
+from dataclasses import field, dataclass
 from types import MappingProxyType
 
-@dataclasses.dataclass(frozen=True)
-class Master:
-    PLACE_DICT: dict = MappingProxyType({
+def place_dict_default_factory():
+    return MappingProxyType({
         '札幌':'01',
         '函館':'02',
         '福島':'03',
@@ -63,11 +62,18 @@ class Master:
         'サンダウ':'88'
         })
 
-    RACE_TYPE_DICT: dict = MappingProxyType({
+def race_type_dict_default_factory():
+    return MappingProxyType({
         '芝': '芝',
         'ダ': 'ダート',
         '障': '障害',
-        })
+    })
+
+@dataclass(frozen=True)
+class Master:
+    # クラス属性として定義
+    PLACE_DICT = place_dict_default_factory()
+    RACE_TYPE_DICT = race_type_dict_default_factory()
     
     WEATHER_LIST: tuple = ('晴', '曇', '小雨', '雨', '小雪', '雪')
     
