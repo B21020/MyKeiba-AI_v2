@@ -32,10 +32,10 @@ def scrape_html_race(race_id_list: list, skip: bool = True):
             # htmlをsoupオブジェクトに変換
             soup = BeautifulSoup(html, "lxml")
             # レースデータが存在するかどうかをチェック
-            data_intro_exists = soup.find("div", attrs={"class": "data_intro"}) is not None
+            data_intro_exists = bool(soup.find("div", attrs={"class": "data_intro"}))
 
-            if data_intro_exists is False:
-                print('race_id {} skipped'.format(race_id))
+            if not data_intro_exists:
+                print('race_id {} skipped. This page is not valid.'.format(race_id))
                 continue
             # 保存するファイルパスを指定
             with open(filename, 'wb') as f:
