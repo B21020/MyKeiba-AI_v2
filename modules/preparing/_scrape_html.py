@@ -5,6 +5,7 @@ import time
 import os
 from tqdm.auto import tqdm
 from urllib.request import urlopen
+from bs4 import BeautifulSoup
 
 from modules.constants import UrlPaths, LocalPaths
 
@@ -28,6 +29,14 @@ def scrape_html_race(race_id_list: list, skip: bool = True):
             time.sleep(1)
             # スクレイピング実行
             html = urlopen(url).read()
+            # htmlをsoupオブジェクトに変換
+            soup = BeautifulSoup(html, "lxml")
+            # レースデータが存在するかどうかをチェック
+            data_intro_exists = bool(soup.find("div", attrs={"class": "data_intro"}))
+
+            if not data_intro_exists:
+                print('race_id {} skipped. This page is not valid.'.format(race_id))
+                continue
             # 保存するファイルパスを指定
             with open(filename, 'wb') as f:
                 # 保存
