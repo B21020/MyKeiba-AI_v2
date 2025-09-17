@@ -67,8 +67,7 @@ def get_rawdata_results(html_path_list: list):
                 df["owner_id"] = owner_id_list
 
                 # インデックスをrace_idにする
-                # use raw string for regex to avoid invalid escape sequence warning
-                race_id = re.findall(r'race\W(\d+)\.bin', html_path)[0]
+                race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
 
                 race_results[race_id] = df
@@ -156,7 +155,7 @@ def get_rawdata_info(html_path_list: list):
                     df["race_class"] = [Master.RACE_CLASS_LIST[9]]
 
                 # インデックスをrace_idにする
-                race_id = re.findall(r'race\W(\d+)\.bin', html_path)[0]
+                race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
 
                 race_infos[race_id] = df
@@ -186,7 +185,7 @@ def get_rawdata_return(html_path_list: list):
                 # dfsの1番目に単勝〜馬連、2番目にワイド〜三連単がある
                 df = pd.concat([dfs[1], dfs[2]])
 
-                race_id = re.findall(r'race\W(\d+)\.bin', html_path)[0]
+                race_id = re.findall('race\W(\d+).bin', html_path)[0]
                 df.index = [race_id] * len(df)
                 race_return[race_id] = df
             except Exception as e:
@@ -251,7 +250,7 @@ def get_rawdata_horse_info(html_path_list: list):
             df_info['breeder_id'] = breeder_id
 
             # インデックスをrace_idにする
-            horse_id = re.findall(r'horse\W(\d+)\.bin', html_path)[0]
+            horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
             df_info.index = [horse_id] * len(df_info)
             horse_info[horse_id] = df_info
 
@@ -283,7 +282,7 @@ def get_rawdata_horse_results(html_path_list: list):
                     print('horse_results empty case1 {}'.format(html_path))
                     continue
 
-                horse_id = re.findall(r'horse\W(\d+)\.bin', html_path)[0]
+                horse_id = re.findall('horse\W(\d+).bin', html_path)[0]
 
                 df.index = [horse_id] * len(df)
                 horse_results[horse_id] = df
@@ -313,7 +312,7 @@ def get_rawdata_peds(html_path_list: list):
             html = f.read()
 
             # horse_idを取得
-            horse_id = re.findall(r'ped\W(\d+)\.bin', html_path)[0]
+            horse_id = re.findall('ped\W(\d+).bin', html_path)[0]
 
             # htmlをsoupオブジェクトに変換
             soup = BeautifulSoup(html, "lxml")
@@ -326,7 +325,7 @@ def get_rawdata_peds(html_path_list: list):
 
             for a in horse_a_list:
                 # 血統データのhorse_idを抜き出す
-                work_peds_id = re.findall(r'horse\W(\w{10})', a["href"])[0]
+                work_peds_id = re.findall('horse\W(\w{10})', a["href"])[0]
                 peds_id_list.append(work_peds_id)
 
             peds[horse_id] = peds_id_list
