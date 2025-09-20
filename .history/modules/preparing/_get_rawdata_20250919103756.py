@@ -371,57 +371,31 @@ def get_rawdata_peds(html_path_list: list):
     print('preparing raw peds table')
     peds = {}
     for html_path in tqdm(html_path_list):
-        try:
-            with open(html_path, 'rb') as f:
-                # 保存してあるbinファイルを読み込む
-                raw = f.read()
+        with open(html_path, 'rb') as f:
+            # 保存してあるbinファイルを読み込む
+            html = f.read()
 
             # horse_idを取得
             horse_id = re.findall(r'ped\W(\d+)\.bin', html_path)[0]
 
-            # エンコーディングを試行（UTF-8 → EUC-JP → CP932）
-            for encoding in ['utf-8', 'euc-jp', 'cp932']:
-                try:
-                    html = raw.decode(encoding)
-                    break
-                except UnicodeDecodeError:
-                    continue
-            else:
-                print(f"デコードに失敗しました: {horse_id}")
-                peds[horse_id] = []
-                continue
-
             # htmlをsoupオブジェクトに変換
             soup = BeautifulSoup(html, "lxml")
 
-            # 血統テーブルを検索
-            blood_table = soup.find("table", attrs={"summary": "5代血統表"})
-            
-            if blood_table is None:
-                print(f"血統テーブルが見つかりません: {horse_id}")
-                peds[horse_id] = []
-                continue
-
             peds_id_list = []
 
-            # 修正された正規表現パターンで血統データからhorse_idを取得する
-            pattern = r'https://db\.netkeiba\.com/horse/(\w{10})/$'
-            horse_a_list = blood_table.find_all("a", attrs={"href": re.compile(pattern)})
+            # 血統データからhorse_idを取得する
+            horse_a_list = (
+                soup.find("table", attrs={"summary": "5代血統表"})
+                .find_all("a", attrs={"href": re.compile(r"^/horse/\w{10}")})
+            )
 
             for a in horse_a_list:
                 # 血統データのhorse_idを抜き出す
-                href = a.get('href')
-                match = re.search(pattern, href)
-                if match:
-                    work_peds_id = match.group(1)
-                    peds_id_list.append(work_peds_id)
+                # Use explicit slash in pattern for clarity instead of \W
+                work_peds_id = re.findall(r'/horse/(\w{10})', a["href"])[0]
+                peds_id_list.append(work_peds_id)
 
             peds[horse_id] = peds_id_list
-
-        except Exception as e:
-            print(f"エラーが発生しました {html_path}: {e}")
-            peds[horse_id] = []
-            continue
 
     # pd.DataFrame型にして一つのデータにまとめて、列と行の入れ替えして、列名をpeds_0, ..., peds_61にする
     peds_df = pd.DataFrame.from_dict(peds, orient='index').add_prefix('peds_')

@@ -1,0 +1,128 @@
+## 馬データをスクレイピングする関数
+```
+def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
+    """
+    netkeiba.comのhorseページのhtmlをスクレイピングしてdata/html/horseに保存する関数。
+    skip=Trueにすると、すでにhtmlが存在する場合はスキップされ、Falseにすると上書きされる。
+    返り値：新しくスクレイピングしたhtmlのファイルパス
+    また、horse_idごとに、最後にスクレイピングした日付を記録し、data/master/horse_results_updated_at.csvに保存する。
+    """
+    ### スクレイピング実行 ###
+    print('scraping')
+    updated_html_path_list = scrape_html_horse(horse_id_list, skip)
+    # パスから正規表現でhorse_id_listを取得
+    horse_id_list = [
+        re.findall('horse\W(\d+).bin', html_path)[0] for html_path in updated_html_path_list
+        ]
+    # DataFrameにしておく
+    horse_id_df = pd.DataFrame({'horse_id': horse_id_list})
+    
+    ### 取得日マスタの更新 ###
+    print('updating master')
+    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') # 現在日時を取得
+    # ファイルが存在しない場合は、作成する
+    if not os.path.isfile(LocalPaths.MASTER_RAW_HORSE_RESULTS_PATH):
+        pd.DataFrame(columns=['horse_id', 'updated_at']).to_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_PATH, index=None)
+    # マスタを読み込み
+    master = pd.read_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_PATH, dtype=object)
+    # horse_id列に新しい馬を追加
+    new_master = master.merge(horse_id_df, on='horse_id', how='outer')
+    # マスタ更新
+    new_master.loc[new_master['horse_id'].isin(horse_id_list), 'updated_at'] = now
+    # 列が入れ替わってしまう場合があるので、修正しつつ保存
+    new_master[['horse_id', 'updated_at']].to_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_PATH, index=None)
+    return updated_html_path_list
+```
+
+## スクレイピングした馬データの基本情報をDataFrameに変換する関数
+```
+def get_rawdata_horse_info(html_path_list: list):
+    """
+    horseページのhtmlを受け取って、馬の基本情報のDataFrameに変換する関数。
+    """
+    print('preparing raw horse_info table')
+    horse_info_df = pd.DataFrame()
+    horse_info = {}
+    for html_path in tqdm(html_path_list):
+        with open(html_path, 'rb') as f:
+            # 保存してあるbinファイルを読み込む
+            html = f.read()
+
+            # 馬の基本情報を取得
+            df_info = pd.read_html(html)[1].set_index(0).T
+
+            # htmlをsoupオブジェクトに変換
+            soup = BeautifulSoup(html, "lxml")
+
+            # 調教師IDをスクレイピング
+            try:
+                trainer_a_list = soup.find("table", attrs={"summary": "のプロフィール"}).find_all(
+                    "a", attrs={"href": re.compile("^/trainer")}
+                )
+                trainer_id = re.findall(r"trainer/(\w*)", trainer_a_list[0]["href"])[0]
+            except IndexError:
+                # 調教師IDを取得できない場合
+                #print('trainer_id empty {}'.format(html_path))
+                trainer_id = NaN
+            df_info['trainer_id'] = trainer_id
+
+            # 馬主IDをスクレイピング
+            try:
+                owner_a_list = soup.find("table", attrs={"summary": "のプロフィール"}).find_all(
+                    "a", attrs={"href": re.compile("^/owner")}
+                )
+                owner_id = re.findall(r"owner/(\w*)", owner_a_list[0]["href"])[0]
+            except IndexError:
+                # 馬主IDを取得できない場合
+                #print('owner_id empty {}'.format(html_path))
+                owner_id = NaN
+            df_info['owner_id'] = owner_id
+
+            # 生産者IDをスクレイピング
+            try:
+                breeder_a_list = soup.find("table", attrs={"summary": "のプロフィール"}).find_all(
+                    "a", attrs={"href": re.compile("^/breeder")}
+                )
+                breeder_id = re.findall(r"breeder/(\w*)", breeder_a_list[0]["href"])[0]
+            except IndexError:
+                # 生産者IDを取得できない場合
+                #print('breeder_id empty {}'.format(html_path))
+                breeder_id = NaN
+            df_info['breeder_id'] = breeder_id
+
+            # インデックスをrace_idにする
+            horse_id = re.findall(r'horse\W(\d+)\.bin', html_path)[0]
+            df_info.index = [horse_id] * len(df_info)
+            horse_info[horse_id] = df_info
+
+    # pd.DataFrame型にして一つのデータにまとめる
+    horse_info_df = pd.concat([horse_info[key] for key in horse_info])
+
+    return horse_info_df
+```
+
+## get_rawdata_horse_info関数を実行したときに出るエラー
+```
+---------------------------------------------------------------------------
+IndexError                                Traceback (most recent call last)
+Cell In[15], line 2
+      1 # 馬の基本情報テーブルの作成
+----> 2 horse_info_new = preparing.get_rawdata_horse_info(html_files_horse)
+
+File c:\Users\koxyg\Documents\GitHub\MyKeiba-AI_v2\modules\preparing\_get_rawdata.py:218, in get_rawdata_horse_info(html_path_list)
+    215 html = f.read()
+    217 # 馬の基本情報を取得
+--> 218 df_info = pd.read_html(html)[1].set_index(0).T
+    220 # htmlをsoupオブジェクトに変換
+    221 soup = BeautifulSoup(html, "lxml")
+
+IndexError: list index out of range
+```
+
+## 現在の状況
+・scrape_html_horse_with_master関数を使ってスクレイピングしたデータをget_rawdata_horse_infoで基本情報をデータフレーム化しようとすると、エラーが出る。
+・データフレーム化できない原因がわからない（エラーの意味がわからない）
+・コードで想定しているHTMLと現在のHTML構造が異なる可能性がある。
+
+## 要件
+上記の状況を解決するために、何を確認するべきか、どのような情報を提供すればよいかのTODOリストを作成してください。

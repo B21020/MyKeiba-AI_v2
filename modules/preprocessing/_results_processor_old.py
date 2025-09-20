@@ -1,4 +1,4 @@
-﻿import pandas as pd
+import pandas as pd
 
 from ._abstract_data_processor import AbstractDataProcessor
 from modules.constants import ResultsCols as Cols

@@ -74,32 +74,35 @@ def _merge_results_into_base_html(base_html_text: str, results_fragment_html: st
     #horse_results_box があれば置換、無ければ末尾にセクションを追加。
     返り値はUTF-8の文字列（保存時に .encode('utf-8') する）。
     """
+    print(f"[DEBUG] base_html length: {len(base_html_text)}")
+    print(f"[DEBUG] fragment length: {len(results_fragment_html)}")
+    
     soup = BeautifulSoup(base_html_text, "lxml")
 
     target = soup.select_one("#horse_results_box")
-    frag_soup = BeautifulSoup(results_fragment_html, "lxml")
+    print(f"[DEBUG] target found: {target is not None}")
+    if target:
+        print(f"[DEBUG] target tag: {target.name}, existing content length: {len(str(target))}")
     
-    # lxmlパーサーは自動的にhtml/bodyタグを追加することがあるので、
-    # body内のコンテンツを取得する
-    if frag_soup.body:
-        fragment_content = frag_soup.body.contents
-    else:
-        fragment_content = frag_soup.contents
+    frag_soup = BeautifulSoup(results_fragment_html, "lxml")
+    print(f"[DEBUG] fragment parsed, children count: {len(list(frag_soup.contents))}")
 
     if target:
         # 既存コンテナの中身を差し替え
         target.clear()
-        for child in fragment_content:
+        for child in frag_soup.contents:
             target.append(child)
+        print(f"[DEBUG] Merged into existing target, new content length: {len(str(target))}")
     else:
         # 念のため末尾に追加（構造変更時の保険）
         wrap = soup.new_tag("div", id="horse_results_box")
-        for child in fragment_content:
+        for child in frag_soup.contents:
             wrap.append(child)
         if soup.body:
             soup.body.append(wrap)
         else:
             soup.append(wrap)
+        print(f"[DEBUG] Created new container and appended")
 
     # meta charset をUTF-8に差し替え（後工程が扱いやすいように）
     head = soup.head or soup.new_tag("head")
@@ -152,14 +155,18 @@ def scrape_html_horse(horse_id_list: list, skip: bool = True):
                 
                 for attempt in range(1, max_retries + 1):
                     try:
+                        print(f"[DEBUG] AJAX attempt {attempt} for horse_id {horse_id}")
                         rr = session.get(ajax_url, params=params, headers=headers, timeout=20)
                         rr.raise_for_status()
                         js = rr.json()
+                        print(f"[DEBUG] AJAX response status: {js.get('status')}")
                         if js.get("status") == "OK":
                             frag_html = js.get("data", "")
+                            print(f"[DEBUG] Got fragment HTML, length: {len(frag_html)}")
                             success = True
                             break
                     except Exception as e:
+                        print(f"[DEBUG] AJAX attempt {attempt} failed: {e}")
                         if attempt == max_retries:
                             print(f"[ERROR] ajax GET {horse_id} attempt={attempt}: {e}")
                         time.sleep(backoff ** attempt)

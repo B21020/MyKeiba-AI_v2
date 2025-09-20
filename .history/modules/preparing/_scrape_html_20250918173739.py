@@ -152,14 +152,18 @@ def scrape_html_horse(horse_id_list: list, skip: bool = True):
                 
                 for attempt in range(1, max_retries + 1):
                     try:
+                        print(f"[DEBUG] AJAX attempt {attempt} for horse_id {horse_id}")
                         rr = session.get(ajax_url, params=params, headers=headers, timeout=20)
                         rr.raise_for_status()
                         js = rr.json()
+                        print(f"[DEBUG] AJAX response status: {js.get('status')}")
                         if js.get("status") == "OK":
                             frag_html = js.get("data", "")
+                            print(f"[DEBUG] Got fragment HTML, length: {len(frag_html)}")
                             success = True
                             break
                     except Exception as e:
+                        print(f"[DEBUG] AJAX attempt {attempt} failed: {e}")
                         if attempt == max_retries:
                             print(f"[ERROR] ajax GET {horse_id} attempt={attempt}: {e}")
                         time.sleep(backoff ** attempt)
@@ -169,12 +173,15 @@ def scrape_html_horse(horse_id_list: list, skip: bool = True):
                     print(f"[WARN] results fragment missing for horse_id {horse_id}; saving base only.")
                     merged = _merge_results_into_base_html(base_text, "")  # 空でもコンテナは整える
                 else:
+                    print(f"[DEBUG] Merging base ({len(base_text)}) + fragment ({len(frag_html)}) for horse_id {horse_id}")
                     merged = _merge_results_into_base_html(base_text, frag_html)
+                    print(f"[DEBUG] Merged HTML length: {len(merged)}")
                 
                 # --- 3) 保存（UTF-8バイト） ---
                 with open(filename, "wb") as f:
                     f.write(merged.encode("utf-8", errors="ignore"))
                 
+                print(f"[DEBUG] Saved file: {filename}, size: {len(merged.encode('utf-8'))} bytes")
                 updated_html_path_list.append(filename)
                 
             except Exception as e:

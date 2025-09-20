@@ -78,23 +78,16 @@ def _merge_results_into_base_html(base_html_text: str, results_fragment_html: st
 
     target = soup.select_one("#horse_results_box")
     frag_soup = BeautifulSoup(results_fragment_html, "lxml")
-    
-    # lxmlパーサーは自動的にhtml/bodyタグを追加することがあるので、
-    # body内のコンテンツを取得する
-    if frag_soup.body:
-        fragment_content = frag_soup.body.contents
-    else:
-        fragment_content = frag_soup.contents
 
     if target:
         # 既存コンテナの中身を差し替え
         target.clear()
-        for child in fragment_content:
+        for child in frag_soup.contents:
             target.append(child)
     else:
         # 念のため末尾に追加（構造変更時の保険）
         wrap = soup.new_tag("div", id="horse_results_box")
-        for child in fragment_content:
+        for child in frag_soup.contents:
             wrap.append(child)
         if soup.body:
             soup.body.append(wrap)

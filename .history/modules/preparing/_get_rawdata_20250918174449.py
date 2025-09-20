@@ -206,94 +206,78 @@ import re
 import pandas as pd
 from bs4 import BeautifulSoup
 from numpy import nan as NaN
-from io import StringIO
-from tqdm.auto import tqdm
 
 def get_rawdata_horse_info(html_path_list: list):
     """
-    horseページのhtmlを受け取って、馬の基本情報のDataFrameに変換する関数（修正版）。
-    - UTF-8優先でデコード
-    - プロフィールテーブルを確実に特定
-    - 調教師/馬主/生産者IDを確実に抽出
+    horseページのhtmlを受け取って、馬の基本情報のDataFrameに変換する関数（堅牢版）。
+    - EUC-JPでデコード
+    - プロフィール表は位置ではなく summary/caption/クラス名で特定
+    - 調教師/馬主/生産者IDは a[href^="/trainer"] 等から抽出
     """
-    print('preparing raw horse_info table')
     out_rows = []
 
-    for html_path in tqdm(html_path_list):
-        try:
-            with open(html_path, 'rb') as f:
-                raw = f.read()
+    for html_path in html_path_list:
+        raw = open(html_path, 'rb').read()
 
-            # 1) エンコーディング優先順位: UTF-8 → EUC-JP → CP932
-            text = None
-            for encoding in ['utf-8', 'euc-jp', 'cp932']:
-                try:
-                    text = raw.decode(encoding)
-                    break
-                except UnicodeDecodeError:
-                    continue
-            
-            if text is None:
-                # print(f'エンコーディング失敗: {html_path}')
-                continue
+        # 1) EUC-JPでテキスト化（失敗時はUTF-8へフォールバック）
+        for enc in ('euc-jp', 'cp932', 'utf-8'):
+            try:
+                text = raw.decode(enc)
+                break
+            except Exception:
+                text = raw.decode(enc, errors='ignore')
+                break
 
-            soup = BeautifulSoup(text, 'lxml')
+        soup = BeautifulSoup(text, 'lxml')
 
-            # 2) プロフィールテーブルの確実な特定
-            prof_table = (
-                soup.find('table', class_='db_prof_table') or
-                soup.find('table', attrs={'summary': re.compile('プロフィール')}) or
-                soup.select_one('table[summary*="プロフィール"]')
-            )
-            
-            if prof_table is None:
-                # print(f'プロフィールテーブル見つからず: {html_path}')
-                continue
-
-            # 3) テーブルを読み込む（StringIOを使用して警告を回避）
-            df = pd.read_html(StringIO(str(prof_table)))[0]
-            
-            # 左列を項目名、右列を値として転置（1行化）
-            if df.shape[1] >= 2:
-                df = df.iloc[:, :2]
-                df.columns = ['項目', '値']
-                df_info = df.set_index('項目').T
-            else:
-                # print(f'プロフィールテーブルの列数が想定外: {html_path}')
-                continue
-
-            # 4) 各IDをより確実に抽出
-            def extract_id(selector, pattern):
-                a = soup.select_one(selector)
-                if a and a.has_attr('href'):
-                    m = re.search(pattern, a['href'])
-                    if m:
-                        return m.group(1)
-                return NaN
-
-            trainer_id = extract_id('a[href^="/trainer/"]', r'/trainer/([^/]+)/')
-            owner_id   = extract_id('a[href^="/owner/"]',   r'/owner/([^/]+)/')
-            breeder_id = extract_id('a[href^="/breeder/"]', r'/breeder/([^/]+)/')
-
-            df_info['trainer_id'] = trainer_id
-            df_info['owner_id']   = owner_id
-            df_info['breeder_id'] = breeder_id
-
-            # 5) インデックスを horse_id に
-            horse_id_m = re.search(r'horse\W(\d+)\.bin', html_path)
-            if horse_id_m:
-                horse_id = horse_id_m.group(1)
-                df_info.index = [horse_id]
-                out_rows.append(df_info)
-            # else:
-            #     print(f'horse_id抽出失敗: {html_path}')
-                
-        except Exception as e:
-            # print(f'処理エラー {html_path}: {e}')
+        # 2) プロフィールテーブルを位置でなく「意味」で特定
+        prof_table = (
+            soup.select_one('table.db_prof_table[summary*="プロフィール"]')
+            or soup.find('table', attrs={'summary': re.compile('プロフィール')})
+        )
+        if prof_table is None:
+            # テーブルがない → ログを出してスキップ
+            # （※ログ集め推奨：ファイル名、title、先頭500文字など）
+            # print(f'プロフィール表なし: {html_path}')
             continue
 
+        # 3) テーブルを読み込む（2列：項目/値）
+        df = pd.read_html(str(prof_table), flavor='lxml')[0]
+        # 左列を項目名、右列を値として転置（1行化）
+        if df.shape[1] >= 2:
+            df = df.iloc[:, :2]                 # 念のため2列に限定
+            df.columns = ['項目', '値']
+            df_info = df.set_index('項目').T
+        else:
+            # 想定外の形はスキップ
+            # print(f'プロフィール表の列数が想定外: {html_path}')
+            continue
+
+        # 4) 各IDは a要素から直接拾う（親テーブル探索に失敗しても拾える）
+        def extract_id(selector, pattern):
+            a = soup.select_one(selector)
+            if a and a.has_attr('href'):
+                m = re.search(pattern, a['href'])
+                if m:
+                    return m.group(1)
+            return NaN
+
+        trainer_id = extract_id('a[href^="/trainer/"]', r'/trainer/([^/]+)/')
+        owner_id   = extract_id('a[href^="/owner/"]',   r'/owner/([^/]+)/')
+        breeder_id = extract_id('a[href^="/breeder/"]', r'/breeder/([^/]+)/')
+
+        df_info['trainer_id'] = trainer_id
+        df_info['owner_id']   = owner_id
+        df_info['breeder_id'] = breeder_id
+
+        # 5) インデックスを horse_id に
+        horse_id_m = re.search(r'horse\W(\d+)\.bin', html_path)
+        horse_id = horse_id_m.group(1) if horse_id_m else None
+        df_info.index = [horse_id]
+
+        out_rows.append(df_info)
+
     if not out_rows:
-        # print('処理できたhorse_infoデータがありません')
         return pd.DataFrame()
 
     horse_info_df = pd.concat(out_rows, axis=0)
@@ -371,57 +355,31 @@ def get_rawdata_peds(html_path_list: list):
     print('preparing raw peds table')
     peds = {}
     for html_path in tqdm(html_path_list):
-        try:
-            with open(html_path, 'rb') as f:
-                # 保存してあるbinファイルを読み込む
-                raw = f.read()
+        with open(html_path, 'rb') as f:
+            # 保存してあるbinファイルを読み込む
+            html = f.read()
 
             # horse_idを取得
             horse_id = re.findall(r'ped\W(\d+)\.bin', html_path)[0]
 
-            # エンコーディングを試行（UTF-8 → EUC-JP → CP932）
-            for encoding in ['utf-8', 'euc-jp', 'cp932']:
-                try:
-                    html = raw.decode(encoding)
-                    break
-                except UnicodeDecodeError:
-                    continue
-            else:
-                print(f"デコードに失敗しました: {horse_id}")
-                peds[horse_id] = []
-                continue
-
             # htmlをsoupオブジェクトに変換
             soup = BeautifulSoup(html, "lxml")
 
-            # 血統テーブルを検索
-            blood_table = soup.find("table", attrs={"summary": "5代血統表"})
-            
-            if blood_table is None:
-                print(f"血統テーブルが見つかりません: {horse_id}")
-                peds[horse_id] = []
-                continue
-
             peds_id_list = []
 
-            # 修正された正規表現パターンで血統データからhorse_idを取得する
-            pattern = r'https://db\.netkeiba\.com/horse/(\w{10})/$'
-            horse_a_list = blood_table.find_all("a", attrs={"href": re.compile(pattern)})
+            # 血統データからhorse_idを取得する
+            horse_a_list = (
+                soup.find("table", attrs={"summary": "5代血統表"})
+                .find_all("a", attrs={"href": re.compile(r"^/horse/\w{10}")})
+            )
 
             for a in horse_a_list:
                 # 血統データのhorse_idを抜き出す
-                href = a.get('href')
-                match = re.search(pattern, href)
-                if match:
-                    work_peds_id = match.group(1)
-                    peds_id_list.append(work_peds_id)
+                # Use explicit slash in pattern for clarity instead of \W
+                work_peds_id = re.findall(r'/horse/(\w{10})', a["href"])[0]
+                peds_id_list.append(work_peds_id)
 
             peds[horse_id] = peds_id_list
-
-        except Exception as e:
-            print(f"エラーが発生しました {html_path}: {e}")
-            peds[horse_id] = []
-            continue
 
     # pd.DataFrame型にして一つのデータにまとめて、列と行の入れ替えして、列名をpeds_0, ..., peds_61にする
     peds_df = pd.DataFrame.from_dict(peds, orient='index').add_prefix('peds_')

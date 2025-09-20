@@ -3,14 +3,16 @@ import re
 import pandas as pd
 import time
 import os
-import random
-import json
-import requests
 from tqdm.auto import tqdm
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 from modules.constants import UrlPaths, LocalPaths
+from ._prepare_chrome_driver import prepare_chrome_driver
 
 def scrape_html_race(race_id_list: list, skip: bool = True):
     """
@@ -47,84 +49,13 @@ def scrape_html_race(race_id_list: list, skip: bool = True):
             updated_html_path_list.append(filename)
     return updated_html_path_list
 
-def _build_session():
-    """requests.Sessionを構築してUser-Agentなどのヘッダーを設定"""
-    s = requests.Session()
-    s.headers.update({
-        "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                       "AppleWebKit/537.36 (KHTML, like Gecko) "
-                       "Chrome/122.0 Safari/537.36"),
-        "Accept-Language": "ja,en;q=0.9",
-    })
-    return s
-
-def _decode_best(bytes_body, enc_candidates=("euc-jp","cp932","utf-8")):
-    """バイトデータから適切なエンコーディングで文字列をデコード"""
-    for enc in enc_candidates:
-        try:
-            return bytes_body.decode(enc), enc
-        except Exception:
-            pass
-    # 最後はignoreで
-    return bytes_body.decode(enc_candidates[-1], errors="ignore"), enc_candidates[-1]
-
-def _merge_results_into_base_html(base_html_text: str, results_fragment_html: str) -> str:
-    """
-    base_html_text（EUC-JPのことが多い）に、results_fragment_html（UTF-8想定）を挿入。
-    #horse_results_box があれば置換、無ければ末尾にセクションを追加。
-    返り値はUTF-8の文字列（保存時に .encode('utf-8') する）。
-    """
-    soup = BeautifulSoup(base_html_text, "lxml")
-
-    target = soup.select_one("#horse_results_box")
-    frag_soup = BeautifulSoup(results_fragment_html, "lxml")
-    
-    # lxmlパーサーは自動的にhtml/bodyタグを追加することがあるので、
-    # body内のコンテンツを取得する
-    if frag_soup.body:
-        fragment_content = frag_soup.body.contents
-    else:
-        fragment_content = frag_soup.contents
-
-    if target:
-        # 既存コンテナの中身を差し替え
-        target.clear()
-        for child in fragment_content:
-            target.append(child)
-    else:
-        # 念のため末尾に追加（構造変更時の保険）
-        wrap = soup.new_tag("div", id="horse_results_box")
-        for child in fragment_content:
-            wrap.append(child)
-        if soup.body:
-            soup.body.append(wrap)
-        else:
-            soup.append(wrap)
-
-    # meta charset をUTF-8に差し替え（後工程が扱いやすいように）
-    head = soup.head or soup.new_tag("head")
-    soup.html.insert(0, head) if not soup.head else None
-    # 既存のcontent-typeを削除
-    for m in soup.find_all("meta", attrs={"http-equiv": re.compile("^content-type$", re.I)}):
-        m.decompose()
-    meta = soup.new_tag("meta")
-    meta.attrs["charset"] = "utf-8"
-    head.insert(0, meta)
-
-    return str(soup)
-
 def scrape_html_horse(horse_id_list: list, skip: bool = True):
     """
-    netkeiba.comのhorseページのhtmlをAJAX直接叩きでスクレイピングしてdata/html/horseに保存する関数。
-    1) 本体HTML（馬ページ）を取得（EUC-JPなど）
-    2) AJAX（/horse/ajax_horse_results.html?id=...）で過去成績のHTML断片を取得
-    3) 断片を本体に挿入してUTF-8で .bin 保存
+    netkeiba.comのhorseページのhtmlをスクレイピングしてdata/html/horseに保存する関数。
     skip=Trueにすると、すでにhtmlが存在する場合はスキップされ、Falseにすると上書きされる。
     返り値：新しくスクレイピングしたhtmlのファイルパス
     """
     updated_html_path_list = []
-    session = _build_session()
-    
     for horse_id in tqdm(horse_id_list):
         # 保存するファイル名
         filename = os.path.join(LocalPaths.HTML_HORSE_DIR, horse_id+'.bin')
@@ -132,58 +63,17 @@ def scrape_html_horse(horse_id_list: list, skip: bool = True):
         if skip and os.path.isfile(filename):
             print('horse_id {} skipped'.format(horse_id))
         else:
-            try:
-                # --- 1) 本体HTML ---
-                base_url = UrlPaths.HORSE_URL + horse_id
-                r = session.get(base_url, timeout=20)
-                r.raise_for_status()
-                
-                base_text, used_enc = _decode_best(r.content)
-                
-                # --- 2) AJAX（過去成績） ---
-                ajax_url = "https://db.netkeiba.com/horse/ajax_horse_results.html"
-                params = {"id": horse_id, "input": "UTF-8", "output": "json"}
-                headers = {"Referer": base_url}
-                frag_html = ""
-                success = False
-                
-                max_retries = 3
-                backoff = 1.5
-                
-                for attempt in range(1, max_retries + 1):
-                    try:
-                        rr = session.get(ajax_url, params=params, headers=headers, timeout=20)
-                        rr.raise_for_status()
-                        js = rr.json()
-                        if js.get("status") == "OK":
-                            frag_html = js.get("data", "")
-                            success = True
-                            break
-                    except Exception as e:
-                        if attempt == max_retries:
-                            print(f"[ERROR] ajax GET {horse_id} attempt={attempt}: {e}")
-                        time.sleep(backoff ** attempt)
-                
-                if not success or not frag_html:
-                    # 成績が無い or 取得失敗 → 本体のみUTF-8で保存
-                    print(f"[WARN] results fragment missing for horse_id {horse_id}; saving base only.")
-                    merged = _merge_results_into_base_html(base_text, "")  # 空でもコンテナは整える
-                else:
-                    merged = _merge_results_into_base_html(base_text, frag_html)
-                
-                # --- 3) 保存（UTF-8バイト） ---
-                with open(filename, "wb") as f:
-                    f.write(merged.encode("utf-8", errors="ignore"))
-                
-                updated_html_path_list.append(filename)
-                
-            except Exception as e:
-                print('horse_id {} error: {}'.format(horse_id, str(e)))
-                continue
-                
-            # 相手サーバーに負担をかけないように待機
-            time.sleep(2.0 + random.random())
-            
+            # horse_idからurlを作る
+            url = UrlPaths.HORSE_URL + horse_id
+            # 相手サーバーに負担をかけないように1秒待機する
+            time.sleep(1)
+            # スクレイピング実行
+            html = urlopen(url).read()
+            # 保存するファイルパスを指定
+            with open(filename, 'wb') as f:
+                # 保存
+                f.write(html)
+            updated_html_path_list.append(filename)
     return updated_html_path_list
 
 def scrape_html_ped(horse_id_list: list, skip: bool = True):

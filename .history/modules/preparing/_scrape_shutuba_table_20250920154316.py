@@ -1,0 +1,209 @@
+import time
+import re
+import pandas as pd
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+from modules.constants import UrlPaths
+from modules.constants import ResultsCols as Cols
+from modules.constants import Master
+from tqdm.auto import tqdm
+from ._prepare_chrome_driver import prepare_chrome_driver
+
+def scrape_shutuba_table(race_id: str, date: str, file_path: str):
+    """
+    当日の出馬表をスクレイピング。
+    dateはyyyy/mm/ddの形式。
+    """
+    driver = prepare_chrome_driver()
+    # 取得し終わらないうちに先に進んでしまうのを防ぐため、暗黙的な待機（デフォルト10秒）
+    driver.implicitly_wait(10)
+    query = '?race_id=' + race_id
+    url = UrlPaths.SHUTUBA_TABLE + query
+    df = pd.DataFrame()
+    try:
+        driver.get(url)
+
+        # メインのテーブルの取得
+        rows_data = []
+        for tr in driver.find_elements(By.CLASS_NAME, 'HorseList'):
+            td_elements = tr.find_elements(By.TAG_NAME, 'td')
+            
+            # 各行のデータを辞書形式で格納
+            row_data = {}
+            horse_id = jockey_id = trainer_id = ''
+            
+            # デバッグ用：最初の行のみ構造を出力
+            if len(rows_data) == 0:
+                print(f"TD要素数: {len(td_elements)}")
+                for i, td in enumerate(td_elements):
+                    print(f"TD[{i}]: class='{td.get_attribute('class')}', text='{td.text}'")
+            
+            # 各td要素から必要な情報を抽出
+            for i, td in enumerate(td_elements):
+                td_class = td.get_attribute('class')
+                td_text = td.text.strip()
+                
+                if td_class == 'HorseInfo':
+                    # 馬情報から馬IDを取得
+                    try:
+                        href = td.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                        horse_id = re.findall(r'horse/(\d*)', href)[0]
+                    except:
+                        pass
+                elif td_class == 'Jockey':
+                    # 騎手情報から騎手IDを取得
+                    try:
+                        href = td.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                        jockey_id = re.findall(r'jockey/result/recent/(\w*)', href)[0]
+                    except:
+                        pass
+                elif td_class == 'Trainer':
+                    # 調教師情報から調教師IDを取得
+                    try:
+                        href = td.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                        trainer_id = re.findall(r'trainer/result/recent/(\w*)', href)[0]
+                    except:
+                        pass
+                
+                # 位置に基づいてデータをマッピング（netkeiba.comの出馬表の標準的な構造）
+                if i == 0:  # 枠番
+                    row_data[Cols.WAKUBAN] = td_text
+                elif i == 1:  # 馬番
+                    row_data[Cols.UMABAN] = td_text
+                elif i == 4:  # 性齢
+                    row_data[Cols.SEX_AGE] = td_text
+                elif i == 5:  # 斤量
+                    row_data[Cols.KINRYO] = td_text
+                elif i == 9:  # 単勝オッズ
+                    row_data[Cols.TANSHO_ODDS] = td_text
+                elif i == 10:  # 人気
+                    row_data[Cols.POPULARITY] = td_text
+                elif i == 8:  # 馬体重
+                    row_data[Cols.WEIGHT_AND_DIFF] = td_text
+            
+            # IDsを追加
+            row_data['horse_id'] = horse_id
+            row_data['jockey_id'] = jockey_id
+            row_data['trainer_id'] = trainer_id
+            
+            rows_data.append(row_data)
+        
+        # DataFrameに変換
+        df = pd.DataFrame(rows_data)
+        df.index = [race_id] * len(df)
+        
+        # データの検証とデバッグ出力
+        print(f"スクレイピング結果: {len(df)}頭の馬データを取得")
+        for col in [Cols.WAKUBAN, Cols.UMABAN, Cols.SEX_AGE, Cols.KINRYO, 
+                   Cols.TANSHO_ODDS, Cols.WEIGHT_AND_DIFF]:
+            if col in df.columns:
+                unique_vals = df[col].unique()
+                print(f"{col}: {unique_vals}")
+        
+        # 性齢データの詳細チェック
+        if Cols.SEX_AGE in df.columns:
+            print(f"スクレイピングされた性齢データ: {df[Cols.SEX_AGE].unique()}")
+            sex_age_check = df[Cols.SEX_AGE].astype(str)
+            invalid_sex_age = sex_age_check[~sex_age_check.str.match(r'^[牡牝セ騸][0-9]+$')]
+            if not invalid_sex_age.empty:
+                print(f"不正な性齢データが検出されました: {invalid_sex_age.unique()}")
+                # 空白や不正な値の詳細を出力
+                for idx, val in invalid_sex_age.items():
+                    print(f"  行 {idx}: '{val}' (長さ: {len(val)})")
+        else:
+            print("警告: 性齢データ列が見つかりません")
+        
+        # 必要な列の存在を確認し、欠損している列にはデフォルト値を設定
+        required_columns = [Cols.WAKUBAN, Cols.UMABAN, Cols.SEX_AGE, Cols.KINRYO, 
+                          Cols.TANSHO_ODDS, Cols.POPULARITY, Cols.WEIGHT_AND_DIFF, 
+                          'horse_id', 'jockey_id', 'trainer_id']
+        
+        for col in required_columns:
+            if col not in df.columns:
+                print(f"警告: 列 '{col}' が見つかりません。空の値で補完します。")
+                df[col] = ''
+
+        # レース情報の取得
+        texts = driver.find_element(By.CLASS_NAME, 'RaceList_Item02').text
+        texts = re.findall(r'\w+', texts)
+        # 障害レースフラグを初期化
+        hurdle_race_flg = False
+        for text in texts:
+            if '0m' in text:
+                # 20211212：[0]→[-1]に修正
+                df['course_len'] = [int(re.findall(r'\d+', text)[-1])] * len(df)
+            if text in Master.WEATHER_LIST:
+                df["weather"] = [text] * len(df)
+            if text in Master.GROUND_STATE_LIST:
+                df["ground_state"] = [text] * len(df)
+            if '稍' in text:
+                df["ground_state"] = [Master.GROUND_STATE_LIST[1]] * len(df)
+            if '不' in text:
+                df["ground_state"] = [Master.GROUND_STATE_LIST[3]] * len(df)
+            if '芝' in text:
+                df['race_type'] = [list(Master.RACE_TYPE_DICT.values())[0]] * len(df)
+            if 'ダ' in text:
+                df['race_type'] = [list(Master.RACE_TYPE_DICT.values())[1]] * len(df)
+            if '障' in text:
+                df['race_type'] = [list(Master.RACE_TYPE_DICT.values())[2]] * len(df)
+                hurdle_race_flg = True
+            if "右" in text:
+                df["around"] = [Master.AROUND_LIST[0]] * len(df)
+            if "左" in text:
+                df["around"] = [Master.AROUND_LIST[1]] * len(df)
+            if "直線" in text:
+                df["around"] = [Master.AROUND_LIST[2]] * len(df)
+            if "新馬" in text:
+                df["race_class"] = [Master.RACE_CLASS_LIST[0]] * len(df)
+            if "未勝利" in text:
+                df["race_class"] = [Master.RACE_CLASS_LIST[1]] * len(df)
+            if "１勝クラス" in text:
+                df["race_class"] = [Master.RACE_CLASS_LIST[2]] * len(df)
+            if "２勝クラス" in text:
+                df["race_class"] = [Master.RACE_CLASS_LIST[3]] * len(df)
+            if "３勝クラス" in text:
+                df["race_class"] = [Master.RACE_CLASS_LIST[4]] * len(df)
+            if "オープン" in text:
+                df["race_class"] = [Master.RACE_CLASS_LIST[5]] * len(df)
+
+        # グレードレース情報の取得
+        if len(driver.find_elements(By.CLASS_NAME, 'Icon_GradeType3')) > 0:
+            df["race_class"] = [Master.RACE_CLASS_LIST[6]] * len(df)
+        elif len(driver.find_elements(By.CLASS_NAME, 'Icon_GradeType2')) > 0:
+            df["race_class"] = [Master.RACE_CLASS_LIST[7]] * len(df)
+        elif len(driver.find_elements(By.CLASS_NAME, 'Icon_GradeType1')) > 0:
+            df["race_class"] = [Master.RACE_CLASS_LIST[8]] * len(df)
+
+        # 障害レースの場合
+        if hurdle_race_flg:
+            df["around"] = [Master.AROUND_LIST[3]] * len(df)
+            df["race_class"] = [Master.RACE_CLASS_LIST[9]] * len(df)
+
+        df['date'] = [date] * len(df)
+    except Exception as e:
+        print(e)
+    finally:
+        driver.close()
+        driver.quit()
+
+    # 取消された出走馬を削除
+    df = df[df[Cols.WEIGHT_AND_DIFF] != '--']
+    df.to_pickle(file_path)
+
+def scrape_horse_id_list(race_id_list: list) -> list:
+    """
+    当日出走するhorse_id一覧を取得
+    """
+    print('sraping horse_id_list')
+    horse_id_list = []
+    for race_id in tqdm(race_id_list):
+        query = '?race_id=' + race_id
+        url = UrlPaths.SHUTUBA_TABLE + query
+        html = urlopen(url)
+        soup = BeautifulSoup(html, 'lxml', from_encoding='utf-8')
+        horse_td_list = soup.find_all("td", attrs={'class': 'HorseInfo'})
+        for td in horse_td_list:
+            horse_id = re.findall(r'\d+', td.find('a')['href'])[0]
+            horse_id_list.append(horse_id)
+    return horse_id_list

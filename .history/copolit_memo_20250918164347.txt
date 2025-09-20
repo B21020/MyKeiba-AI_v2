@@ -1,0 +1,126 @@
+## 馬データをスクレイピングする関数
+```
+def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
+    """
+    netkeiba.comのhorseページのhtmlをスクレイピングしてdata/html/horseに保存する関数。
+    skip=Trueにすると、すでにhtmlが存在する場合はスキップされ、Falseにすると上書きされる。
+    返り値：新しくスクレイピングしたhtmlのファイルパス
+    また、horse_idごとに、最後にスクレイピングした日付を記録し、data/master/horse_results_updated_at.csvに保存する。
+    """
+    ### スクレイピング実行 ###
+    print('scraping')
+    updated_html_path_list = scrape_html_horse(horse_id_list, skip)
+    # パスから正規表現でhorse_id_listを取得
+    horse_id_list = [
+        re.findall('horse\W(\d+).bin', html_path)[0] for html_path in updated_html_path_list
+        ]
+    # DataFrameにしておく
+    horse_id_df = pd.DataFrame({'horse_id': horse_id_list})
+    
+    ### 取得日マスタの更新 ###
+    print('updating master')
+    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') # 現在日時を取得
+    # ファイルが存在しない場合は、作成する
+    if not os.path.isfile(LocalPaths.MASTER_RAW_HORSE_RESULTS_PATH):
+        pd.DataFrame(columns=['horse_id', 'updated_at']).to_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_PATH, index=None)
+    # マスタを読み込み
+    master = pd.read_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_PATH, dtype=object)
+    # horse_id列に新しい馬を追加
+    new_master = master.merge(horse_id_df, on='horse_id', how='outer')
+    # マスタ更新
+    new_master.loc[new_master['horse_id'].isin(horse_id_list), 'updated_at'] = now
+    # 列が入れ替わってしまう場合があるので、修正しつつ保存
+    new_master[['horse_id', 'updated_at']].to_csv(LocalPaths.MASTER_RAW_HORSE_RESULTS_PATH, index=None)
+    return updated_html_path_list
+```
+
+## スクレイピングした馬の過去成績をDataFrameに変換する関数
+```
+def get_rawdata_horse_results(html_path_list: list):
+    """
+    horseページのhtmlを受け取って、馬の過去成績のDataFrameに変換する関数。
+    """
+    print('preparing raw horse_results table')
+    horse_results = {}
+    for html_path in tqdm(html_path_list):
+        with open(html_path, 'rb') as f:
+            try:
+                # 保存してあるbinファイルを読み込む
+                html = f.read()
+
+                df = pd.read_html(html)[3]
+                # 受賞歴がある馬の場合、3番目に受賞歴テーブルが来るため、4番目のデータを取得する
+                if df.columns[0]=='受賞歴':
+                    df = pd.read_html(html)[4]
+
+                # 新馬の競走馬レビューが付いた場合、
+                # 列名に0が付与されるため、次のhtmlへ飛ばす
+                if df.columns[0] == 0:
+                    print('horse_results empty case1 {}'.format(html_path))
+                    continue
+
+                horse_id = re.findall(r'horse\W(\d+)\.bin', html_path)[0]
+
+                df.index = [horse_id] * len(df)
+                horse_results[horse_id] = df
+
+            # 競走データが無い場合（新馬）を飛ばす
+            except IndexError:
+                print('horse_results empty case2 {}'.format(html_path))
+                continue
+
+    # pd.DataFrame型にして一つのデータにまとめる
+    horse_results_df = pd.concat([horse_results[key] for key in horse_results])
+
+    # 列名に半角スペースがあれば除去する
+    horse_results_df = horse_results_df.rename(columns=lambda x: x.replace(' ', ''))
+
+    return horse_results_df
+```
+
+## get_rawdata_horse_info関数を実行したときに出るエラー
+```
+horse_results empty case2 data\html\horse\2012100683.bin
+horse_results empty case2 data\html\horse\2013101904.bin
+horse_results empty case2 data\html\horse\2014100566.bin
+...
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+Cell In[24], line 2
+      1 #　馬の過去成績テーブルの作成
+----> 2 horse_results_new = preparing.get_rawdata_horse_results(html_files_horse)
+
+File c:\Users\koxyg\Documents\GitHub\MyKeiba-AI_v2\modules\preparing\_get_rawdata.py:349, in get_rawdata_horse_results(html_path_list)
+    346             continue
+    348 # pd.DataFrame型にして一つのデータにまとめる
+--> 349 horse_results_df = pd.concat([horse_results[key] for key in horse_results])
+    351 # 列名に半角スペースがあれば除去する
+    352 horse_results_df = horse_results_df.rename(columns=lambda x: x.replace(' ', ''))
+
+File c:\Users\koxyg\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\core\reshape\concat.py:382, in concat(objs, axis, join, ignore_index, keys, levels, names, verify_integrity, sort, copy)
+    379 elif copy and using_copy_on_write():
+    380     copy = False
+--> 382 op = _Concatenator(
+    383     objs,
+    384     axis=axis,
+    385     ignore_index=ignore_index,
+    386     join=join,
+    387     keys=keys,
+    388     levels=levels,
+    389     names=names,
+    390     verify_integrity=verify_integrity,
+...
+--> 507     raise ValueError("No objects to concatenate")
+    509 if keys is None:
+    510     objs_list = list(com.not_none(*objs_list))
+
+ValueError: No objects to concatenate
+```
+
+## 現在の状況
+・scrape_html_horse_with_master関数を使ってスクレイピングしたデータをget_rawdata_horse_infoで基本情報をデータフレーム化しようとすると、エラーが出る。
+・データフレーム化できない原因がわからない（エラーの意味がわからない）
+・コードで想定しているHTMLと現在のHTML構造が異なる可能性がある。
+
+## 要件
+上記の状況を解決するために、何を確認するべきか、どのような情報を提供すればよいかのTODOリストを作成してください。

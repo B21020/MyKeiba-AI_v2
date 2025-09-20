@@ -23,8 +23,7 @@ class ShutubaTableProcessor(ResultsProcessor):
         return raw
     
     def _select_columns(self, raw):
-        # 利用可能な列のみ選択
-        required_cols = [
+        df = raw.copy()[[\
             Cols.WAKUBAN, # 枠番
             Cols.UMABAN, # 馬番
             Cols.KINRYO, # 斤量
@@ -44,10 +43,6 @@ class ShutubaTableProcessor(ResultsProcessor):
             'date',
             'around',
             'race_class'
-        ]
-        
-        # 存在する列のみ選択
-        available_cols = [col for col in required_cols if col in raw.columns]
-        df = raw.copy()[available_cols]
+            ]]
         return df
 

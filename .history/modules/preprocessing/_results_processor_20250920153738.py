@@ -1,4 +1,4 @@
-﻿import pandas as pd
+import pandas as pd
 
 from ._abstract_data_processor import AbstractDataProcessor
 from modules.constants import ResultsCols as Cols
@@ -22,9 +22,7 @@ class ResultsProcessor(AbstractDataProcessor):
         
         # 性齢を性と年齢に分ける
         # サイト上のテーブルに存在する列名は、ResultsColsクラスで定数化している。
-        df["性"] = df[Cols.SEX_AGE].map(lambda x: str(x)[0])
-        # 年齢の変換時にエラーが発生する場合は欠損値にする
-        df["年齢"] = pd.to_numeric(df[Cols.SEX_AGE].map(lambda x: str(x)[1:]), errors='coerce')
+        df = self._preprocess_sex_age(df)
 
         # 馬体重を体重と体重変化に分ける
         df["体重"] = df[Cols.WEIGHT_AND_DIFF].str.split("(", expand=True)[0]
@@ -34,11 +32,16 @@ class ResultsProcessor(AbstractDataProcessor):
         df['体重'] = pd.to_numeric(df['体重'], errors='coerce')
         df['体重変化'] = pd.to_numeric(df['体重変化'], errors='coerce')
 
-        # 各列を数値型に変換（errors='coerce'で不正データを欠損値に変換）
+        # 各列を数値型に変換（'---'などの無効値をNaNに変換）
         df[Cols.TANSHO_ODDS] = pd.to_numeric(df[Cols.TANSHO_ODDS], errors='coerce')
         df[Cols.KINRYO] = pd.to_numeric(df[Cols.KINRYO], errors='coerce')
-        df[Cols.WAKUBAN] = pd.to_numeric(df[Cols.WAKUBAN], errors='coerce')
-        df[Cols.UMABAN] = pd.to_numeric(df[Cols.UMABAN], errors='coerce')
+        
+        # 整数列の変換（安全に型変換）
+        wakuban_numeric = pd.to_numeric(df[Cols.WAKUBAN], errors='coerce')
+        df[Cols.WAKUBAN] = wakuban_numeric.astype('Int64')
+        
+        umaban_numeric = pd.to_numeric(df[Cols.UMABAN], errors='coerce')
+        df[Cols.UMABAN] = umaban_numeric.astype('Int64')
         
         # 6/6出走数追加
         df['n_horses'] = df.index.map(df.index.value_counts())
@@ -58,13 +61,43 @@ class ResultsProcessor(AbstractDataProcessor):
         """
         df = raw.copy()
         # 着順に数字以外の文字列が含まれているものを取り除く
-        # 取消を-1にし、数字以外の文字列を0に置換する（errors='coerce'で安全に変換）
-        df[Cols.RANK] = df[Cols.RANK].apply(lambda x: x if str(x).isdigit() else (-1 if x == "取消" else 0))
-        df[Cols.RANK] = pd.to_numeric(df[Cols.RANK], errors='coerce').fillna(0).astype(int)
+        # 取消を-1にし、数字以外の文字列を0に置換する
+        df[Cols.RANK] = df[Cols.RANK].apply(lambda x: x if str(x).isdigit() else (-1 if x == "取消" else 0)).astype(int)
         # -1(取消)を取り除く
         df = df[df[Cols.RANK] != -1]
         df['rank'] = df[Cols.RANK].map(lambda x:1 if x>0 and x<4 else 0)
         print(df)
+        return df
+
+    def _preprocess_sex_age(self, raw):
+        """
+        性齢の前処理
+        """
+        df = raw.copy()
+        
+        # 性齢データの確認と前処理
+        sex_age_data = df[Cols.SEX_AGE].astype(str)
+        
+        # 有効な性齢データのパターン（牡3, 牝4, セ5など）をチェック
+        valid_pattern = sex_age_data.str.match(r'^[牡牝セ騸][0-9]+$')
+        
+        # 無効なデータを確認（デバッグ用）
+        invalid_data = sex_age_data[~valid_pattern]
+        if not invalid_data.empty:
+            print(f"無効な性齢データが見つかりました: {invalid_data.unique()}")
+        
+        # 性の抽出（1文字目）
+        df["性"] = sex_age_data.str[0]
+        
+        # 年齢の抽出（2文字目以降を数値変換、エラーは欠損値に）
+        age_str = sex_age_data.str[1:]
+        df["年齢"] = pd.to_numeric(age_str, errors='coerce').astype('Int64')
+        
+        # 欠損値が発生した場合の警告
+        age_na_count = df["年齢"].isna().sum()
+        if age_na_count > 0:
+            print(f"年齢の変換で{age_na_count}件の欠損値が発生しました")
+        
         return df
 
     def _sort(self, raw):

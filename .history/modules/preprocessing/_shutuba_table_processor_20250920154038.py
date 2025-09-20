@@ -9,22 +9,31 @@ class ShutubaTableProcessor(ResultsProcessor):
     def _preprocess(self):
         df = super()._preprocess()
         
-        # 距離は10の位を切り捨てる（不正データは0に変換）
-        df["course_len"] = pd.to_numeric(df["course_len"], errors='coerce').fillna(0) // 100
+        # 距離は10の位を切り捨てる
+        df["course_len"] = df["course_len"].astype(float) // 100
         
         # 開催場所
         df['開催'] = df.index.map(lambda x:str(x)[4:6])
         
         # 日付型に変更
         df["date"] = pd.to_datetime(df["date"])
+        
+        # 数値型の確認と修正（予測時の型エラーを防ぐ）
+        from modules.constants import ResultsCols as Cols
+        
+        # 馬番と枠番を確実に数値型に変換
+        if Cols.UMABAN in df.columns:
+            df[Cols.UMABAN] = pd.to_numeric(df[Cols.UMABAN], errors='coerce').astype('Int64')
+        if Cols.WAKUBAN in df.columns:
+            df[Cols.WAKUBAN] = pd.to_numeric(df[Cols.WAKUBAN], errors='coerce').astype('Int64')
+            
         return df
     
     def _preprocess_rank(self, raw):
         return raw
     
     def _select_columns(self, raw):
-        # 利用可能な列のみ選択
-        required_cols = [
+        df = raw.copy()[[\
             Cols.WAKUBAN, # 枠番
             Cols.UMABAN, # 馬番
             Cols.KINRYO, # 斤量
@@ -44,10 +53,6 @@ class ShutubaTableProcessor(ResultsProcessor):
             'date',
             'around',
             'race_class'
-        ]
-        
-        # 存在する列のみ選択
-        available_cols = [col for col in required_cols if col in raw.columns]
-        df = raw.copy()[available_cols]
+            ]]
         return df
 

@@ -1,4 +1,4 @@
-﻿import pandas as pd
+import pandas as pd
 
 from ._abstract_data_processor import AbstractDataProcessor
 from modules.constants import ResultsCols as Cols
@@ -58,9 +58,8 @@ class ResultsProcessor(AbstractDataProcessor):
         """
         df = raw.copy()
         # 着順に数字以外の文字列が含まれているものを取り除く
-        # 取消を-1にし、数字以外の文字列を0に置換する（errors='coerce'で安全に変換）
-        df[Cols.RANK] = df[Cols.RANK].apply(lambda x: x if str(x).isdigit() else (-1 if x == "取消" else 0))
-        df[Cols.RANK] = pd.to_numeric(df[Cols.RANK], errors='coerce').fillna(0).astype(int)
+        # 取消を-1にし、数字以外の文字列を0に置換する
+        df[Cols.RANK] = df[Cols.RANK].apply(lambda x: x if str(x).isdigit() else (-1 if x == "取消" else 0)).astype(int)
         # -1(取消)を取り除く
         df = df[df[Cols.RANK] != -1]
         df['rank'] = df[Cols.RANK].map(lambda x:1 if x>0 and x<4 else 0)
