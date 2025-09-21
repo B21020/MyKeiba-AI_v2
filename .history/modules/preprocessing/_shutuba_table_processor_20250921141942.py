@@ -9,9 +9,6 @@ class ShutubaTableProcessor(ResultsProcessor):
     def _preprocess(self):
         df = super()._preprocess()
         
-        # 馬番のクリーンアップを最初に実行（course_len処理より前）
-        df = self._clean_umaban(df)
-        
         # 距離は10の位を切り捨てる（不正データは0に変換）
         df["course_len"] = pd.to_numeric(df["course_len"], errors='coerce').fillna(0) // 100
         
@@ -20,6 +17,9 @@ class ShutubaTableProcessor(ResultsProcessor):
         
         # 日付型に変更
         df["date"] = pd.to_datetime(df["date"])
+        
+        # 馬番のクリーンアップ（不正な馬番を除去）
+        df = self._clean_umaban(df)
         
         return df
     

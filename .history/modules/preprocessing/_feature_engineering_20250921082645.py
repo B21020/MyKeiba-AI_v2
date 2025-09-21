@@ -82,46 +82,39 @@ class FeatureEngineering:
         else:
             target_master = pd.read_csv(csv_path, dtype=object)
 
-        # マスタ整形: NaN/重複を除去し、型を保証
-        if len(target_master) > 0:
-            target_master = target_master.dropna(subset=[target_col])
-            target_master = target_master.drop_duplicates(subset=[target_col], keep='first')
-            target_master['encoded_id'] = pd.to_numeric(target_master['encoded_id'], errors='coerce')
-            target_master = target_master.dropna(subset=['encoded_id'])
-            target_master['encoded_id'] = target_master['encoded_id'].astype(int)
-        else:
-            target_master = pd.DataFrame(columns=[target_col, 'encoded_id'])
-
-        # 現在データ側の抽出（NaN除去）
-        curr_vals = self.__data[[target_col]].dropna(subset=[target_col]).copy()
+        # 後のmaxでエラーになるので、整数に変換
+        target_master['encoded_id'] = target_master['encoded_id'].astype(int)
 
         # masterに存在しない、新しい情報を抽出
+        # NaN値を除外してから処理
+        valid_data = self.__data[self.__data[target_col].notna()]
+        new_target = valid_data[[target_col]][
+            ~valid_data[target_col].isin(target_master[target_col])
+            ].drop_duplicates(subset=[target_col])
+        # 新しい情報を登録
         if len(target_master) > 0:
-            known = set(target_master[target_col].astype(str).tolist())
-            new_target = curr_vals[~curr_vals[target_col].astype(str).isin(known)]
-        else:
-            new_target = curr_vals
-        new_target = new_target.drop_duplicates(subset=[target_col], keep='first')
-
-        # 新しい情報に連番を付与
-        if len(target_master) > 0:
-            start = int(target_master['encoded_id'].max()) + 1
-            new_target = new_target.assign(encoded_id=range(start, start + len(new_target)))
-        else:  # まだ1行も登録されていない場合
-            new_target = new_target.assign(encoded_id=range(len(new_target)))
-
-        # マスタ更新（インデックスが一意になるよう整理）
-        updated_master = pd.concat([target_master, new_target], ignore_index=True)
-        updated_master = updated_master.dropna(subset=[target_col])
-        updated_master = updated_master.drop_duplicates(subset=[target_col], keep='first')
-        updated_master[[target_col, 'encoded_id']].to_csv(csv_path, index=False)
-
-        # マッピングSeries（インデックス一意）
-        mapping = updated_master.set_index(target_col)['encoded_id']
-        mapping = mapping[~mapping.index.duplicated(keep='first')]
-
+            new_target['encoded_id'] = [
+                i+max(target_master['encoded_id']) for i in range(1, len(new_target)+1)
+                ]
+            # 整数に変換
+            new_target['encoded_id'] = new_target['encoded_id'].astype(int)
+        else: # まだ1行も登録されていない場合の処理
+            new_target['encoded_id'] = [i for i in range(len(new_target))]
+        # 元のマスタと繋げる
+        new_target_master = pd.concat([target_master, new_target], ignore_index=True)
+        # 重複を除去してからインデックスを設定
+        new_target_master = new_target_master.dropna(subset=[target_col]).drop_duplicates(subset=[target_col], keep='first')
+        # インデックスをリセットしてから設定
+        new_target_master = new_target_master.reset_index(drop=True)
+        new_target_master = new_target_master.set_index(target_col)['encoded_id']
+        # マスタファイルを更新
+        new_target_master.to_csv(csv_path)
         # ラベルエンコーディング実行
-        self.__data[target_col] = pd.Categorical(self.__data[target_col].map(mapping))
+        # NaN値を持つ行を除外してマッピング
+        mapped_values = self.__data[target_col].map(new_target_master)
+        # NaN値を-1で置換（Categoricalに変換する前に）
+        mapped_values = mapped_values.fillna(-1)
+        self.__data[target_col] = pd.Categorical(mapped_values)
         return self
     
     def encode_horse_id(self):

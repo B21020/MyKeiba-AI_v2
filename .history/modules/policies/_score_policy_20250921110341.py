@@ -90,42 +90,8 @@ class StdScorePolicy(AbstractScorePolicy):
     @staticmethod
     def calc(model, X: pd.DataFrame) -> pd.DataFrame:
         score_table = _calc(model, X)
-        s = score_table[_SCORE]
-        
-        # インデックス構造に応じてgroupby方法を調整
-        if s.index.nlevels > 1:
-            # MultiIndexの場合：level=0でgroupby
-            g = s.groupby(level=0)
-        else:
-            # 単一レベルの場合：同じレース内なので全体で標準化
-            race_ids = s.index.unique()
-            if len(race_ids) == 1:
-                # 単一レース：全体を1つのグループとして標準化
-                mean_val = s.mean()
-                std_val = s.std(ddof=0)
-                
-                if np.isfinite(std_val) and std_val > 0:
-                    z = (s - mean_val) / std_val
-                    score_table[_SCORE] = z.astype(float)
-                else:
-                    # 分散0（全て同値）の場合はそのまま
-                    score_table[_SCORE] = s.astype(float)
-                return score_table
-            else:
-                # 複数レース：レースIDでgroupby
-                g = s.groupby(s.index)
-        
-        # 複数レースまたはMultiIndexの場合の従来ロジック
-        mean_ = g.transform('mean')
-        std_ = g.transform('std')
-        nuniq = g.transform('nunique')
-        
-        std_replaced = std_.replace(0, np.nan)
-        z = (s - mean_) / std_replaced
-        z_finite = z.where(np.isfinite(z), s)
-        z_final = z_finite.where(nuniq > 1, s).fillna(0)
-        
-        score_table[_SCORE] = z_final.astype(float)
+        # レース内でスコアを標準化
+        score_table[_SCORE] = _apply_scaler(score_table[_SCORE], _scaler_standard)
         return score_table
 
 class MinMaxScorePolicy(AbstractScorePolicy):
