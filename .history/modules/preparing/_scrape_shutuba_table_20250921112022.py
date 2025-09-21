@@ -24,12 +24,12 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     url = UrlPaths.SHUTUBA_TABLE + query
     df = pd.DataFrame()
     try:
-        driver.get(url)
-        # JSレンダリング完了のシグナル: 出馬表のリスト要素が現れるのを待つ
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'HorseList')))
+    driver.get(url)
+    # JSレンダリング完了のシグナル: 出馬表のリスト要素が現れるのを待つ
+    wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'HorseList')))
 
-        # メインのテーブルの取得
-        for tr in driver.find_elements(By.CLASS_NAME, 'HorseList'):
+    # メインのテーブルの取得
+    for tr in driver.find_elements(By.CLASS_NAME, 'HorseList'):
             row = []
             for td in tr.find_elements(By.TAG_NAME, 'td'):
                 if td.get_attribute('class') in ['HorseInfo']:
@@ -50,9 +50,9 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
         df.index = [race_id] * len(df)
 
         # レース情報の取得
-        # レース情報の要素が現れるまで待機
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'RaceList_Item02')))
-        texts = driver.find_element(By.CLASS_NAME, 'RaceList_Item02').text
+    # レース情報の要素が現れるまで待機
+    wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'RaceList_Item02')))
+    texts = driver.find_element(By.CLASS_NAME, 'RaceList_Item02').text
         texts = re.findall(r'\w+', texts)
         # 障害レースフラグを初期化
         hurdle_race_flg = False
@@ -116,28 +116,6 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
 
     # 取消された出走馬を削除
     df = df[df[Cols.WEIGHT_AND_DIFF] != '--']
-    
-    # 馬番クリーンアップ（無効な馬番のレコードを除去）
-    def is_valid_umaban(umaban):
-        try:
-            if pd.isna(umaban) or str(umaban).strip() == '':
-                return False
-            num = int(umaban)
-            return 1 <= num <= 18
-        except (ValueError, TypeError):
-            return False
-    
-    # 馬番クリーンアップを適用
-    valid_mask = df[Cols.UMABAN].apply(is_valid_umaban)
-    invalid_count = (~valid_mask).sum()
-    if invalid_count > 0:
-        print(f"scrape_shutuba_table: {invalid_count}件の不正な馬番レコードを除去しました")
-        invalid_umaban = df[~valid_mask][Cols.UMABAN].tolist()
-        print(f"除去された馬番: {invalid_umaban}")
-        df = df[valid_mask].copy().reset_index(drop=True)
-        # インデックスを再設定
-        df.index = [race_id] * len(df)
-    
     df.to_pickle(file_path)
 
 def scrape_horse_id_list(race_id_list: list) -> list:
