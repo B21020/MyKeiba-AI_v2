@@ -125,56 +125,24 @@ def scrape_shutuba_table(race_id: str, date: str, file_path: str):
     
     # 馬番クリーンアップ（無効な馬番のレコードを除去）
     def is_valid_umaban(umaban):
-        """
-        馬番の有効性を検証する拡張関数
-        """
         try:
-            if pd.isna(umaban):
+            if pd.isna(umaban) or str(umaban).strip() == '':
                 return False
-            
-            # 文字列に変換して前後の空白を除去
-            str_umaban = str(umaban).strip()
-            
-            # 空文字や'None'文字列をチェック
-            if str_umaban == '' or str_umaban.lower() == 'none':
-                return False
-                
-            # 取消を示すキーワードをチェック
-            cancel_keywords = ['取消', '除外', '--', 'キャンセル', 'cancel']
-            if any(keyword in str_umaban for keyword in cancel_keywords):
-                return False
-            
-            # 数値に変換
-            num = int(str_umaban)
-            
-            # 1-18の範囲チェック
+            num = int(umaban)
             return 1 <= num <= 18
-            
         except (ValueError, TypeError):
             return False
     
     # 馬番クリーンアップを適用
-    if len(df) > 0:
-        print(f"クリーンアップ前の馬番: {df[Cols.UMABAN].tolist()}")
-        
-        valid_mask = df[Cols.UMABAN].apply(is_valid_umaban)
-        invalid_count = (~valid_mask).sum()
-        
-        if invalid_count > 0:
-            print(f"scrape_shutuba_table: {invalid_count}件の不正な馬番レコードを除去しました")
-            invalid_umaban = df[~valid_mask][Cols.UMABAN].tolist()
-            print(f"除去された馬番: {invalid_umaban}")
-            
-            # 不正なレコードの詳細をログ出力
-            invalid_records = df[~valid_mask]
-            for idx, record in invalid_records.iterrows():
-                print(f"  除去レコード {idx}: 馬番='{record[Cols.UMABAN]}', 体重='{record[Cols.WEIGHT_AND_DIFF]}'")
-            
-            df = df[valid_mask].copy().reset_index(drop=True)
-            # インデックスを再設定
-            df.index = [race_id] * len(df)
-        else:
-            print("すべての馬番が有効です")
+    valid_mask = df[Cols.UMABAN].apply(is_valid_umaban)
+    invalid_count = (~valid_mask).sum()
+    if invalid_count > 0:
+        print(f"scrape_shutuba_table: {invalid_count}件の不正な馬番レコードを除去しました")
+        invalid_umaban = df[~valid_mask][Cols.UMABAN].tolist()
+        print(f"除去された馬番: {invalid_umaban}")
+        df = df[valid_mask].copy().reset_index(drop=True)
+        # インデックスを再設定
+        df.index = [race_id] * len(df)
     
     df.to_pickle(file_path)
 
