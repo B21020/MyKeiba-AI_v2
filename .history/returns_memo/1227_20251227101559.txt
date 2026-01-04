@@ -1,0 +1,88 @@
+阪神01R 09:45発走 ダート未勝利m 右 稍重
+[LightGBM] [Warning] feature_fraction is set=0.4, colsample_bytree=1.0 will be ignored. Current value: feature_fraction=0.4
+[LightGBM] [Warning] lambda_l1 is set=5.7934257175117564e-06, reg_alpha=0.0 will be ignored. Current value: lambda_l1=5.7934257175117564e-06
+[LightGBM] [Warning] lambda_l2 is set=6.434980996929208e-06, reg_lambda=0.0 will be ignored. Current value: lambda_l2=6.434980996929208e-06
+[LightGBM] [Warning] bagging_fraction is set=1.0, subsample=1.0 will be ignored. Current value: bagging_fraction=1.0
+[LightGBM] [Warning] bagging_freq is set=0, subsample_freq=0 will be ignored. Current value: bagging_freq=0
+         race_id  馬番     score
+5   202509050701   6  2.790818
+7   202509050701   8  0.567580
+3   202509050701   4  0.446282
+12  202509050701  13  0.443120
+1   202509050701   2  0.148902
+9   202509050701  10  0.120918
+14  202509050701  15  0.117298
+13  202509050701  14  0.104216
+4   202509050701   5  0.054823
+8   202509050701   9 -0.024893
+6   202509050701   7 -0.438435
+11  202509050701  12 -0.542722
+10  202509050701  11 -1.050294
+0   202509050701   1 -1.154946
+2   202509050701   3 -1.582668
+
+中山01R 10:00発走 ダート未勝利m 右 稍重
+[LightGBM] [Warning] feature_fraction is set=0.4, colsample_bytree=1.0 will be ignored. Current value: feature_fraction=0.4
+[LightGBM] [Warning] lambda_l1 is set=5.7934257175117564e-06, reg_alpha=0.0 will be ignored. Current value: lambda_l1=5.7934257175117564e-06
+[LightGBM] [Warning] lambda_l2 is set=6.434980996929208e-06, reg_lambda=0.0 will be ignored. Current value: lambda_l2=6.434980996929208e-06
+[LightGBM] [Warning] bagging_fraction is set=1.0, subsample=1.0 will be ignored. Current value: bagging_fraction=1.0
+[LightGBM] [Warning] bagging_freq is set=0, subsample_freq=0 will be ignored. Current value: bagging_freq=0
+         race_id  馬番     score
+9   202506050701  10  2.633142
+14  202506050701  15  0.770022
+12  202506050701  13  0.738161
+4   202506050701   5  0.576218
+3   202506050701   4  0.450633
+0   202506050701   1  0.297757
+8   202506050701   9  0.258284
+2   202506050701   3 -0.006111
+13  202506050701  14 -0.231306
+11  202506050701  12 -0.682886
+6   202506050701   7 -0.783596
+1   202506050701   2 -0.787708
+10  202506050701  11 -1.063975
+5   202506050701   6 -1.070724
+7   202506050701   8 -1.097910
+
+阪神02R 10:15発走 ダート未勝利m 右 稍重
+[LightGBM] [Warning] feature_fraction is set=0.4, colsample_bytree=1.0 will be ignored. Current value: feature_fraction=0.4
+[LightGBM] [Warning] lambda_l1 is set=5.7934257175117564e-06, reg_alpha=0.0 will be ignored. Current value: lambda_l1=5.7934257175117564e-06
+[LightGBM] [Warning] lambda_l2 is set=6.434980996929208e-06, reg_lambda=0.0 will be ignored. Current value: lambda_l2=6.434980996929208e-06
+[LightGBM] [Warning] bagging_fraction is set=1.0, subsample=1.0 will be ignored. Current value: bagging_fraction=1.0
+[LightGBM] [Warning] bagging_freq is set=0, subsample_freq=0 will be ignored. Current value: bagging_freq=0
+         race_id  馬番     score
+7   202509050702   8  1.383176
+2   202509050702   3  1.136940
+1   202509050702   2  0.793046
+8   202509050702   9  0.727813
+6   202509050702   7  0.310879
+0   202509050702   1  0.247808
+4   202509050702   5 -0.222519
+3   202509050702   4 -0.410831
+10  202509050702  11 -1.221091
+5   202509050702   6 -1.368896
+9   202509050702  10 -1.376324
+
+中山02R 10:30発走 ダート未勝利m 右 稍重
+[LightGBM] [Warning] feature_fraction is set=0.4, colsample_bytree=1.0 will be ignored. Current value: feature_fraction=0.4
+[LightGBM] [Warning] lambda_l1 is set=5.7934257175117564e-06, reg_alpha=0.0 will be ignored. Current value: lambda_l1=5.7934257175117564e-06
+[LightGBM] [Warning] lambda_l2 is set=6.434980996929208e-06, reg_lambda=0.0 will be ignored. Current value: lambda_l2=6.434980996929208e-06
+[LightGBM] [Warning] bagging_fraction is set=1.0, subsample=1.0 will be ignored. Current value: bagging_fraction=1.0
+[LightGBM] [Warning] bagging_freq is set=0, subsample_freq=0 will be ignored. Current value: bagging_freq=0
+         race_id  馬番     score
+7   202506050702   8  1.768374
+8   202506050702   9  1.547630
+6   202506050702   7  0.966267
+13  202506050702  14  0.878108
+5   202506050702   6  0.212002
+12  202506050702  13  0.167709
+14  202506050702  15  0.147485
+3   202506050702   4  0.104012
+0   202506050702   1  0.048978
+15  202506050702  16 -0.015024
+11  202506050702  12 -0.154826
+4   202506050702   5 -0.261187
+2   202506050702   3 -0.988760
+9   202506050702  10 -1.341677
+1   202506050702   2 -1.374700
+10  202506050702  11 -1.704391
