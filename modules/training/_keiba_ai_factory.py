@@ -30,4 +30,10 @@ class KeibaAIFactory:
     @staticmethod
     def load(filepath: str) -> KeibaAI:
         with open(filepath, mode='rb') as f:
-            return dill.load(f)
+            keiba_ai = dill.load(f)
+        # 古いモデルでも推論できるよう、学習時列名を復元
+        try:
+            keiba_ai.prepare_for_inference()
+        except Exception:
+            pass
+        return keiba_ai

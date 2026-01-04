@@ -7,10 +7,10 @@ import random
 import json
 import requests
 from tqdm.auto import tqdm
-from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
 
 from modules.constants import UrlPaths, LocalPaths
+from ._netkeiba_http import build_session, fetch_bytes
 
 # 追加：User-Agent一覧
 USER_AGENTS = [
@@ -35,6 +35,7 @@ def scrape_html_race(race_id_list: list, skip: bool = True):
     返り値：新しくスクレイピングしたhtmlのファイルパス
     """
     updated_html_path_list = []
+    session = build_session()
     for race_id in tqdm(race_id_list):
         # 保存するファイル名
         filename = os.path.join(LocalPaths.HTML_RACE_DIR, race_id+'.bin')
@@ -44,11 +45,10 @@ def scrape_html_race(race_id_list: list, skip: bool = True):
         else:
             # race_idからurlを作る
             url = UrlPaths.RACE_URL + race_id
-            # 相手サーバーに負担をかけないように1秒待機する
+            # 相手サーバーに負担をかけないように待機
             time.sleep(1)
-            # スクレイピング実行
-            req = Request(url, headers={'User-Agent': random.choice(USER_AGENTS)})
-            html = urlopen(req).read()
+            # スクレイピング実行（UA付き）
+            html = fetch_bytes(session, url, referer=UrlPaths.TOP_URL)
             # htmlをsoupオブジェクトに変換
             soup = BeautifulSoup(html, "lxml")
             # レースデータが存在するかどうかをチェック
@@ -208,6 +208,7 @@ def scrape_html_ped(horse_id_list: list, skip: bool = True):
     返り値：新しくスクレイピングしたhtmlのファイルパス
     """
     updated_html_path_list = []
+    session = build_session()
     for horse_id in tqdm(horse_id_list):
         # 保存するファイル名
         filename = os.path.join(LocalPaths.HTML_PED_DIR, horse_id+'.bin')
@@ -217,13 +218,11 @@ def scrape_html_ped(horse_id_list: list, skip: bool = True):
         else:
             # horse_idからurlを作る
             url = UrlPaths.PED_URL + horse_id
-            # horse_idからurlを作る
-            url = UrlPaths.PED_URL + horse_id
-            # 相手サーバーに負担をかけないように1秒待機する
+            # 相手サーバーに負担をかけないように待機
             time.sleep(1)
-            # スクレイピング実行
-            req = Request(url, headers={'User-Agent': random.choice(USER_AGENTS)})
-            html = urlopen(req).read()
+            # スクレイピング実行（UA付き）
+            # Refererは同一ドメイン側（馬ページ）に寄せると弾かれにくい
+            html = fetch_bytes(session, url, referer=UrlPaths.HORSE_URL + horse_id)
             # 保存するファイルパスを指定
             with open(filename, 'wb') as f:
                 # 保存
@@ -243,8 +242,8 @@ def scrape_html_horse_with_master(horse_id_list: list, skip: bool = True):
     updated_html_path_list = scrape_html_horse(horse_id_list, skip)
     # パスから正規表現でhorse_id_listを取得
     horse_id_list = [
-        re.findall('horse\W(\d+).bin', html_path)[0] for html_path in updated_html_path_list
-        ]
+        re.findall(r"horse\W(\d+)\.bin", html_path)[0] for html_path in updated_html_path_list
+    ]
     # DataFrameにしておく
     horse_id_df = pd.DataFrame({'horse_id': horse_id_list})
     

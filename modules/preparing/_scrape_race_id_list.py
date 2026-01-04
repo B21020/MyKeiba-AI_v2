@@ -6,12 +6,11 @@ import re
 import requests
 from tqdm.auto import tqdm
 from bs4 import BeautifulSoup
-from urllib.request import urlopen, Request
-import random
 from selenium.webdriver.common.by import By
 
 from modules.constants import UrlPaths
 from ._prepare_chrome_driver import prepare_chrome_driver
+from ._netkeiba_http import build_session, fetch_bytes
 
 # 追加：User-Agent一覧
 USER_AGENTS = [
@@ -40,6 +39,7 @@ def scrape_kaisai_date(from_: str, to_: str):
     print(f'Date range created: {len(date_range)} months to process')
     # 開催日一覧を入れるリスト
     kaisai_date_list = []
+    session = build_session()
     for year, month in tqdm(zip(date_range.year, date_range.month), total=len(date_range)):
         # print(f'Processing year={year}, month={month}')
         # 取得したdate_rangeから、スクレイピング対象urlを作成する。
@@ -49,25 +49,10 @@ def scrape_kaisai_date(from_: str, to_: str):
             'month=' + str(month),
         ]
         url = UrlPaths.CALENDAR_URL + '?' + '&'.join(query)
-        # print(f'Requesting URL: {url}')  # デバッグ用ログ追加
-        html = None
-        agent = random.choice(USER_AGENTS)
-        # print(f'Using User-Agent: {agent}')  # デバッグ用ログ追加
-        try:
-            time.sleep(1) # サーバー負荷軽減のため待機
-            headers = {
-                'User-Agent': agent,
-                'Referer': 'https://race.netkeiba.com/'
-            }
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            html = response.content
-        except Exception as e:
-            # print(f'Error occurred: {e}')
-            # print(f'Failed URL: {url}')
-            raise e
-        soup = BeautifulSoup(html, "html.parser")
-        soup = BeautifulSoup(html, "html.parser")
+        # サーバー負荷軽減
+        time.sleep(1)
+        html_bytes = fetch_bytes(session, url, referer=UrlPaths.TOP_URL)
+        soup = BeautifulSoup(html_bytes, "html.parser")
         a_list = soup.find('table', class_='Calendar_Table').find_all('a')
         for a in a_list:
             kaisai_date_list.append(re.findall(r'(?<=kaisai_date=)\d+', a['href'])[0])

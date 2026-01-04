@@ -1,7 +1,12 @@
 import pandas as pd
 import lightgbm as lgb
 from sklearn.metrics import roc_auc_score
-import optuna.integration.lightgbm as lgb_o
+
+try:
+    import optuna.integration.lightgbm as lgb_o
+except ModuleNotFoundError:
+    # 推論では不要。チューニング実行時のみ optuna-integration[lightgbm] を要求する。
+    lgb_o = None
 
 from ._data_splitter import DataSplitter
 
@@ -18,6 +23,12 @@ class ModelWrapper:
         """
         optunaによるチューニングを実行。
         """
+
+        if lgb_o is None:
+            raise ModuleNotFoundError(
+                "Could not find `optuna-integration` for `lightgbm`. "
+                "Please run `pip install optuna-integration[lightgbm]` to enable tuning."
+            )
 
         params = {'objective': 'binary'}
 
@@ -52,7 +63,8 @@ class ModelWrapper:
 
     def train(self, datasets: DataSplitter):
         # 学習
-        self.__lgb_model.fit(datasets.X_train.values, datasets.y_train.values)
+        # DataFrameでfitして、列名をモデル側に残す（推論時の列整列に必須）
+        self.__lgb_model.fit(datasets.X_train, datasets.y_train.values)
         # 学習時の列名をモデルに保持（predict時の整列に利用）
         try:
             self.__lgb_model.feature_name_ = list(datasets.X_train.columns)
