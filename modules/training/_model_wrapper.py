@@ -65,6 +65,19 @@ class ModelWrapper:
         # 学習
         # DataFrameでfitして、列名をモデル側に残す（推論時の列整列に必須）
         self.__lgb_model.fit(datasets.X_train, datasets.y_train.values)
+
+        # 学習時のカテゴリ列とカテゴリ順序をモデルに保持（推論時の不一致回避）
+        try:
+            cat_cols = datasets.X_train.select_dtypes(include='category').columns.tolist()
+            if cat_cols:
+                setattr(self.__lgb_model, 'mykeiba_categorical_columns_', list(cat_cols))
+                setattr(
+                    self.__lgb_model,
+                    'mykeiba_categorical_categories_',
+                    {c: list(datasets.X_train[c].cat.categories) for c in cat_cols},
+                )
+        except Exception:
+            pass
         # 学習時の列名をモデルに保持（predict時の整列に利用）
         try:
             self.__lgb_model.feature_name_ = list(datasets.X_train.columns)

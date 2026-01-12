@@ -30,12 +30,30 @@ USER_AGENTS = [
 
 def scrape_html_race(race_id_list: list, skip: bool = True):
     """
-    netkeiba.comのraceページのhtmlをスクレイピングしてdata/html/raceに保存する関数。
+    race.netkeiba.com の race/result ページ（払戻テーブル含む）をスクレイピングして
+    data/html/race に保存する関数。
     skip=Trueにすると、すでにhtmlが存在する場合はスキップされ、Falseにすると上書きされる。
     返り値：新しくスクレイピングしたhtmlのファイルパス
     """
+
+    def _is_valid_race_result_page(html_bytes: bytes, *, race_id: str) -> bool:
+        # race/result.html は meta charset=EUC-JP なので bytes のままでもlxmlで解析できる
+        soup = BeautifulSoup(html_bytes, "lxml")
+
+        # 払戻テーブル（ResultPayBack 由来のクラス）が存在すること
+        if soup.select_one("table.Payout_Detail_Table") is None:
+            return False
+
+        og = soup.find("meta", attrs={"property": "og:url"})
+        og_url = og.get("content", "") if og else ""
+        if race_id not in og_url:
+            return False
+
+        return True
+
     updated_html_path_list = []
     session = build_session()
+    driver = None
     for race_id in tqdm(race_id_list):
         # 保存するファイル名
         filename = os.path.join(LocalPaths.HTML_RACE_DIR, race_id+'.bin')
@@ -43,25 +61,43 @@ def scrape_html_race(race_id_list: list, skip: bool = True):
         if skip and os.path.isfile(filename):
             print('race_id {} skipped'.format(race_id))
         else:
-            # race_idからurlを作る
-            url = UrlPaths.RACE_URL + race_id
+            # race_idからurlを作る（払戻テーブルが含まれる race/result.html を取得）
+            url = UrlPaths.RACE_RESULT_URL + race_id
             # 相手サーバーに負担をかけないように待機
             time.sleep(1)
+
             # スクレイピング実行（UA付き）
             html = fetch_bytes(session, url, referer=UrlPaths.TOP_URL)
-            # htmlをsoupオブジェクトに変換
-            soup = BeautifulSoup(html, "lxml")
-            # レースデータが存在するかどうかをチェック
-            data_intro_exists = bool(soup.find("div", attrs={"class": "data_intro"}))
 
-            if not data_intro_exists:
-                print('race_id {} skipped. This page is not valid.'.format(race_id))
-                continue
+            if not _is_valid_race_result_page(html, race_id=race_id):
+                # requestsでダメなら、Seleniumでの取得を試す（環境依存）
+                try:
+                    if driver is None:
+                        from ._prepare_chrome_driver import prepare_chrome_driver
+                        driver = prepare_chrome_driver()
+                    driver.get(url)
+                    time.sleep(1)
+                    html_s = driver.page_source.encode('utf-8', errors='ignore')
+                    if _is_valid_race_result_page(html_s, race_id=race_id):
+                        html = html_s
+                    else:
+                        print(f'race_id {race_id} skipped. This page is not valid (blocked or not a result page).')
+                        continue
+                except Exception as e:
+                    print(f'race_id {race_id} skipped. Selenium fallback failed: {e}')
+                    continue
+
             # 保存するファイルパスを指定
             with open(filename, 'wb') as f:
                 # 保存
                 f.write(html)
             updated_html_path_list.append(filename)
+
+    if driver is not None:
+        try:
+            driver.quit()
+        except Exception:
+            pass
     return updated_html_path_list
 
 def _build_session():

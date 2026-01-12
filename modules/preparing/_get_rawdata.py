@@ -180,25 +180,150 @@ def get_rawdata_return(html_path_list: list):
     """
     print('preparing raw return table')
     race_return = {}
+    failed: dict[str, str] = {}
     for html_path in tqdm(html_path_list):
-        with open(html_path, 'rb') as f:
-            try:
+        race_id = None
+        try:
+            m = re.findall(r'race\W(\d+)\.bin', html_path)
+            race_id = m[0] if len(m) > 0 else None
+
+            with open(html_path, 'rb') as f:
                 # 保存してあるbinファイルを読み込む
                 html = f.read()
 
-                html = html.replace(b'<br />', b'br')
-                dfs = pd.read_html(html)
+            if html is None or len(html) == 0:
+                raise ValueError('empty html file')
 
-                # dfsの1番目に単勝〜馬連、2番目にワイド〜三連単がある
-                df = pd.concat([dfs[1], dfs[2]])
+            # NOTE:
+            # - netkeiba は meta charset=EUC-JP が多い
+            # - bytes のまま read_html すると環境依存で拾える表が減ることがあるため、先にdecodeしてから読む
+            from io import StringIO
 
-                race_id = re.findall(r'race\W(\d+)\.bin', html_path)[0]
-                df.index = [race_id] * len(df)
-                race_return[race_id] = df
-            except Exception as e:
-                print('error at {}'.format(html_path))
-                print(e)
+            lower = html.lower()
+            # result.html は meta charset="EUC-JP" 形式が多いので、"charset=euc-jp" だけだと検出漏れする。
+            if (b'euc-jp' in lower) or (b'euc_jp' in lower):
+                decoded = html.decode('euc-jp', errors='ignore')
+            else:
+                decoded = html.decode('utf-8', errors='ignore')
+            decoded = decoded.replace('<br />', 'br')
+
+            # まずは result.html の払戻テーブル（Payout_Detail_Table）を直接拾う。
+            # bs4のパーサ相性問題もあり得るので、regex抽出→read_html を優先する。
+            payout_dfs: list[pd.DataFrame] = []
+            try:
+                pattern = (
+                    r'(<table[^>]*class=(?:"[^"]*Payout_Detail_Table[^"]*"|\'[^\']*Payout_Detail_Table[^\']*\')[^>]*>.*?</table>)'
+                )
+                table_htmls = re.findall(pattern, decoded, flags=re.IGNORECASE | re.DOTALL)
+                for table_html in table_htmls:
+                    try:
+                        payout_dfs.append(pd.read_html(StringIO(table_html))[0])
+                    except Exception:
+                        continue
+            except Exception:
+                payout_dfs = []
+
+            if payout_dfs:
+                df = pd.concat(payout_dfs, axis=0)
+            else:
+                # NOTE:
+                # - ページによっては「壊れた表」(列見出しが空など)が混ざり、
+                #   pandas.read_html が IndexError(list index out of range) を投げることがある。
+                # - その場合は BeautifulSoup で <table> を切り出して、読めるものだけを集める。
+                try:
+                    dfs = pd.read_html(StringIO(decoded))
+                except Exception as e_read_html:
+                    from bs4 import BeautifulSoup
+
+                    try:
+                        soup = BeautifulSoup(decoded, 'lxml')
+                        dfs = []
+                        for table in soup.find_all('table'):
+                            try:
+                                dfs.extend(pd.read_html(StringIO(str(table))))
+                            except Exception:
+                                continue
+                    except Exception:
+                        # fallback自体が失敗した場合は、元の例外を優先して投げる
+                        raise e_read_html
+
+                if dfs is None or len(dfs) == 0:
+                    raise ValueError('no tables parsed by read_html')
+
+                payout_keywords = (
+                    '単勝', '複勝', '枠連', '馬連', 'ワイド', '馬単', '三連複', '三連単', 'WIN5'
+                )
+
+                payout_dfs: list[pd.DataFrame] = []
+                for dfi in dfs:
+                    if not isinstance(dfi, pd.DataFrame) or dfi.empty or dfi.shape[1] < 2:
+                        continue
+                    try:
+                        col0 = dfi.columns[0]
+                        s0 = dfi[col0].astype(str)
+                    except Exception:
+                        continue
+                    if s0.str.contains('|'.join(payout_keywords), regex=True).any():
+                        payout_dfs.append(dfi)
+
+                if not payout_dfs:
+                    # 期待する払戻テーブルが無いケースを明示
+                    raise ValueError(
+                        f'payout tables not found in parsed tables: n_tables={len(dfs)}'
+                    )
+
+                df = pd.concat(payout_dfs, axis=0)
+
+            # result.html では払戻金が「190円」のように単位付きで入ることがあるため、後段のReturnProcessorが
+            # 数値変換できるように「円」を除去（NaNを文字列化しないように注意）。
+            for c in (1, 2):
+                if c in df.columns:
+                    ser = df[c]
+                    df[c] = ser.where(ser.isna(), ser.astype(str).str.replace('円', '', regex=False))
+
+            # result.html の複勝/ワイドは <br> 区切りが pandas.read_html で空白区切りになることがある。
+            # 既存ReturnProcessorは 'br' 区切りを前提にしているため、空白→'br' に正規化する。
+            if 0 in df.columns:
+                # 券種名の揺れを正規化（ReturnProcessorが期待する表記に寄せる）
+                df[0] = df[0].replace({'3連複': '三連複', '3連単': '三連単'})
+                multi_mask = df[0].astype(str).isin(['複勝', 'ワイド'])
+                for c in (1, 2):
+                    if c in df.columns:
+                        ser = df.loc[multi_mask, c]
+                        df.loc[multi_mask, c] = ser.where(
+                            ser.isna(),
+                            ser.astype(str).str.replace(r'\s+', 'br', regex=True)
+                        )
+
+            if race_id is None:
+                raise ValueError('race_id not found from html path')
+            df.index = [race_id] * len(df)
+            race_return[race_id] = df
+
+        except Exception as e:
+            key = race_id if race_id is not None else str(html_path)
+            failed[key] = f'{type(e).__name__}: {e}'
+            print('error at {}'.format(html_path))
+            print(e)
+
     # pd.DataFrame型にして一つのデータにまとめる
+    if not race_return:
+        n_total = len(html_path_list)
+        failed_ids = sorted(failed.keys())
+        # 例外メッセージが長くなりすぎないよう先頭だけ
+        sample_ids = failed_ids[:20]
+        sample_errors = list(failed.items())[:5]
+        details = "\n".join([f"- {rid}: {msg}" for rid, msg in sample_errors])
+        raise ValueError(
+            "No return tables were parsed (No objects to concatenate). "
+            f"html_path_list size={n_total}, parsed=0, failed={len(failed_ids)}. "
+            f"failed race_id sample={sample_ids}.\n"
+            "Representative errors:\n"
+            f"{details}\n"
+            "Hints: (1) HTMLがレース結果ページではない/取得失敗ページ, (2) 払戻テーブル未掲載, "
+            "(3) netkeiba側のHTML構造変更, (4) 保存ファイルが空。"
+        )
+
     race_return_df = pd.concat([race_return[key] for key in race_return])
     return race_return_df
 

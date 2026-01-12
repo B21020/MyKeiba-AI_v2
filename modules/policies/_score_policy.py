@@ -117,11 +117,14 @@ def _calc(model, X: pd.DataFrame) -> pd.DataFrame:
         # → Xの情報を捨てないように、数値行列としてモデルに渡す（必要ならpad/truncate）
         X_model = X.reindex(columns=x_cols, fill_value=0)
         X_matrix_mode = True
-    # 型の安全化（カテゴリ→コード、datetime/timedelta→数値、float化、inf/NaN対策）
+    
+    # 型の安全化（datetime/timedelta→数値、bool→int、inf/NaN対策）
+    # ⚠️ category型は変換しない（LightGBMが学習時のcategory情報を必要とするため）
     for col in X_model.columns:
         s = X_model[col]
+        
+        # category型はそのまま保持（LightGBMが内部で処理する）
         if getattr(s.dtype, 'name', '') == 'category':
-            X_model[col] = s.cat.codes
             continue
 
         # datetime は float に直接 cast できないので、epoch秒へ変換
@@ -145,7 +148,10 @@ def _calc(model, X: pd.DataFrame) -> pd.DataFrame:
         if is_bool_dtype(s):
             X_model[col] = s.astype('int64')
 
-    X_model = X_model.astype(float).replace([np.inf, -np.inf], 0).fillna(0)
+    # float化: category型以外のカラムのみ
+    non_cat_cols = [col for col in X_model.columns if X_model[col].dtype.name != 'category']
+    if non_cat_cols:
+        X_model[non_cat_cols] = X_model[non_cat_cols].astype(float).replace([np.inf, -np.inf], 0).fillna(0)
 
     # 予測
     if not X_matrix_mode:
