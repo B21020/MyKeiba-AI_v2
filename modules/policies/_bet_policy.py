@@ -28,7 +28,13 @@ class BetPolicyTansho:
     @staticmethod
     def judge(score_table: pd.DataFrame, threshold: float) -> dict:
         filtered_table = score_table[score_table['score'] >= threshold]
-        bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
+        # race_id列があればそれをキーに、無ければ従来通りインデックスでグループ化
+        if 'race_id' in filtered_table.columns:
+            bet_df = filtered_table.groupby('race_id')[ResultsCols.UMABAN].apply(list).to_frame()
+        else:
+            bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
         bet_dict = bet_df.rename(columns={ResultsCols.UMABAN: 'tansho'}).T.to_dict()
         return bet_dict
 
@@ -39,7 +45,12 @@ class BetPolicyFukusho:
     @staticmethod
     def judge(score_table: pd.DataFrame, threshold: float) -> dict:
         filtered_table = score_table[score_table['score'] >= threshold]
-        bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
+        if 'race_id' in filtered_table.columns:
+            bet_df = filtered_table.groupby('race_id')[ResultsCols.UMABAN].apply(list).to_frame()
+        else:
+            bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
         bet_dict = bet_df.rename(columns={ResultsCols.UMABAN: 'fukusho'}).T.to_dict()
         return bet_dict
 
@@ -49,7 +60,12 @@ class BetPolicyUmarenBox:
     """
     def judge(score_table: pd.DataFrame, threshold: float) -> dict:
         filtered_table = score_table[score_table['score'] >= threshold]
-        bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
+        if 'race_id' in filtered_table.columns:
+            bet_df = filtered_table.groupby('race_id')[ResultsCols.UMABAN].apply(list).to_frame()
+        else:
+            bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
         bet_df = bet_df[bet_df[ResultsCols.UMABAN].apply(len) >= 2]
         bet_dict = bet_df.rename(columns={ResultsCols.UMABAN: 'umaren'}).T.to_dict()
         return bet_dict
@@ -60,7 +76,12 @@ class BetPolicyUmatanBox:
     """
     def judge(score_table: pd.DataFrame, threshold: float) -> dict:
         filtered_table = score_table[score_table['score'] >= threshold]
-        bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
+        if 'race_id' in filtered_table.columns:
+            bet_df = filtered_table.groupby('race_id')[ResultsCols.UMABAN].apply(list).to_frame()
+        else:
+            bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
         bet_df = bet_df[bet_df[ResultsCols.UMABAN].apply(len) >= 2]
         bet_dict = bet_df.rename(columns={ResultsCols.UMABAN: 'umatan'}).T.to_dict()
         return bet_dict
@@ -71,7 +92,12 @@ class BetPolicyWideBox:
     """
     def judge(score_table: pd.DataFrame, threshold: float) -> dict:
         filtered_table = score_table[score_table['score'] >= threshold]
-        bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
+        if 'race_id' in filtered_table.columns:
+            bet_df = filtered_table.groupby('race_id')[ResultsCols.UMABAN].apply(list).to_frame()
+        else:
+            bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
         bet_df = bet_df[bet_df[ResultsCols.UMABAN].apply(len) >= 2]
         bet_dict = bet_df.rename(columns={ResultsCols.UMABAN: 'wide'}).T.to_dict()
         return bet_dict
@@ -82,7 +108,12 @@ class BetPolicySanrenpukuBox:
     """
     def judge(score_table: pd.DataFrame, threshold: float) -> dict:
         filtered_table = score_table[score_table['score'] >= threshold]
-        bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
+        if 'race_id' in filtered_table.columns:
+            bet_df = filtered_table.groupby('race_id')[ResultsCols.UMABAN].apply(list).to_frame()
+        else:
+            bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
         bet_df = bet_df[bet_df[ResultsCols.UMABAN].apply(len) >= 3]
         bet_dict = bet_df.rename(columns={ResultsCols.UMABAN: 'sanrenpuku'}).T.to_dict()
         return bet_dict
@@ -93,7 +124,12 @@ class BetPolicySanrentanBox:
     """
     def judge(score_table: pd.DataFrame, threshold: float) -> dict:
         filtered_table = score_table[score_table['score'] >= threshold]
-        bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
+        if 'race_id' in filtered_table.columns:
+            bet_df = filtered_table.groupby('race_id')[ResultsCols.UMABAN].apply(list).to_frame()
+        else:
+            bet_df = filtered_table.groupby(level=0)[ResultsCols.UMABAN].apply(list).to_frame()
+
         bet_df = bet_df[bet_df[ResultsCols.UMABAN].apply(len) >= 3]
         bet_dict = bet_df.rename(columns={ResultsCols.UMABAN: 'sanrentan'}).T.to_dict()
         return bet_dict

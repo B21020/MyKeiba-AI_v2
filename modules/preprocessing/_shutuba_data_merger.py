@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 
 from ._data_merger import DataMerger
@@ -5,6 +6,7 @@ from modules.preprocessing import ShutubaTableProcessor
 from modules.preprocessing import HorseResultsProcessor
 from modules.preprocessing import HorseInfoProcessor
 from modules.preprocessing import PedsProcessor
+from modules.constants import LocalPaths
 
 class ShutubaDataMerger(DataMerger):
     def __init__(self,
@@ -44,3 +46,34 @@ class ShutubaDataMerger(DataMerger):
         self._merge_horse_results()
         self._merge_horse_info()
         self._merge_peds()
+        self._merge_jockey_stats()
+
+    def _merge_jockey_stats(self):
+        """\
+        騎手成績特徴量テーブルのマージ（出馬表ベース）
+
+        data/tmp/jockey_stats.pickle を (date, horse_id) 単位でマージする。
+        ファイルが存在しない場合は何もしない。
+        """
+        stats_path = LocalPaths.JOCKEY_STATS_PATH
+        if not os.path.isfile(stats_path):
+            return
+
+        stats = pd.read_pickle(stats_path)
+        stats = stats.reset_index()  # date, horse_id 列を取り出す
+
+        # 既存の self._merged_data 側にも jockey_id 列があるため、
+        # ここでは騎手特徴量テーブル側の jockey_id は使わずに削除しておく
+        # （重複した列名による "jockey_id_x" / "jockey_id_y" 化を防ぐ）
+        if 'jockey_id' in stats.columns:
+            stats = stats.drop(columns=['jockey_id'])
+
+        base = self._merged_data.copy()
+
+        base = base.merge(
+            stats,
+            on=['date', 'horse_id'],
+            how='left'
+        )
+
+        self._merged_data = base

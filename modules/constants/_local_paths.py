@@ -23,6 +23,10 @@ class LocalPaths:
     RAW_HORSE_INFO_PATH: str = os.path.join(RAW_DIR, 'horse_info.pickle')
     RAW_PEDS_PATH: str = os.path.join(RAW_DIR, 'peds.pickle')
     
+    ### tmpディレクトリのパス
+    TMP_DIR: str = os.path.join(DATA_DIR, 'tmp')
+    JOCKEY_STATS_PATH: str = os.path.join(TMP_DIR, 'jockey_stats.pickle')
+
     ### masterディレクトリのパス
     MASTER_DIR: str = os.path.join(DATA_DIR, 'master')
     MASTER_RAW_HORSE_RESULTS_PATH: str = os.path.join(MASTER_DIR, 'horse_results_updated_at.csv')

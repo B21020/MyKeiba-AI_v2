@@ -8,3 +8,4 @@ from ._results_processor import ResultsProcessor
 from ._return_processor import ReturnProcessor
 from ._shutuba_table_processor import ShutubaTableProcessor
 from ._shutuba_data_merger import ShutubaDataMerger
+from ._jockey_stats_processor import JockeyStatsProcessor

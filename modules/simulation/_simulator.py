@@ -28,45 +28,49 @@ class Simulator:
             n_bets_race = 0
             bet_amount_race = 0
             return_amount_race = 0
-            for action in actions[race_id]:
-                #actionの定義を別途した方が良いかも
-                if action == 'tansho':
-                    n_bets, bet_amount, return_amount = self.betting_tickets.bet_tansho(
-                        race_id, actions[race_id][action], 1
-                        )
-                elif action == 'fukusho':
-                    n_bets, bet_amount, return_amount = self.betting_tickets.bet_fukusho(
-                        race_id, actions[race_id][action], 1
-                        )
-                elif action == 'umaren':
-                    n_bets, bet_amount, return_amount = self.betting_tickets.bet_umaren_box(
-                        race_id, actions[race_id][action], 1
-                        )
-                elif action == 'umatan':
-                    n_bets, bet_amount, return_amount = self.betting_tickets.bet_umatan_box(
-                        race_id, actions[race_id][action], 1
-                        )
-                elif action == 'wide':
-                    n_bets, bet_amount, return_amount = self.betting_tickets.bet_wide_box(
-                        race_id, actions[race_id][action], 1
-                        )
-                elif action == 'sanrenpuku':
-                    n_bets, bet_amount, return_amount = self.betting_tickets.bet_sanrenpuku_box(
-                        race_id, actions[race_id][action], 1
-                        )
-                elif action == 'sanrentan':
-                    n_bets, bet_amount, return_amount = self.betting_tickets.bet_sanrentan_box(
-                        race_id, actions[race_id][action], 1
-                        )
-                n_bets_race += n_bets
-                bet_amount_race += bet_amount
-                return_amount_race += return_amount
-                returns_per_race_dict[race_id] = {
-                    'n_bets': n_bets_race,
-                    'bet_amount': bet_amount_race,
-                    'return_amount': return_amount_race,
-                    'hit_or_not': int(return_amount_race > 0)
-                }
+            try:
+                for action in actions[race_id]:
+                    #actionの定義を別途した方が良いかも
+                    if action == 'tansho':
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_tansho(
+                            race_id, actions[race_id][action], 1
+                            )
+                    elif action == 'fukusho':
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_fukusho(
+                            race_id, actions[race_id][action], 1
+                            )
+                    elif action == 'umaren':
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_umaren_box(
+                            race_id, actions[race_id][action], 1
+                            )
+                    elif action == 'umatan':
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_umatan_box(
+                            race_id, actions[race_id][action], 1
+                            )
+                    elif action == 'wide':
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_wide_box(
+                            race_id, actions[race_id][action], 1
+                            )
+                    elif action == 'sanrenpuku':
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_sanrenpuku_box(
+                            race_id, actions[race_id][action], 1
+                            )
+                    elif action == 'sanrentan':
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_sanrentan_box(
+                            race_id, actions[race_id][action], 1
+                            )
+                    n_bets_race += n_bets
+                    bet_amount_race += bet_amount
+                    return_amount_race += return_amount
+                    returns_per_race_dict[race_id] = {
+                        'n_bets': n_bets_race,
+                        'bet_amount': bet_amount_race,
+                        'return_amount': return_amount_race,
+                        'hit_or_not': int(return_amount_race > 0)
+                    }
+            except KeyError:
+                # 払戻テーブルに存在しないレースIDは、比較プロットのため一旦スキップする
+                continue
         return pd.DataFrame.from_dict(returns_per_race_dict, orient='index')
 
     def calc_returns(self, actions: dict) -> dict:
@@ -76,6 +80,16 @@ class Simulator:
         returns_dict = {}
         if len(actions) != 0:
             returns_per_race = self.calc_returns_per_race(actions)
+            # 払戻テーブルに存在するレースIDが一つも無い場合は、全て0として返す
+            if returns_per_race.empty:
+                returns_dict['n_bets'] = 0
+                returns_dict['n_races'] = 0
+                returns_dict['n_hits'] = 0
+                returns_dict['total_bet_amount'] = 0
+                returns_dict['return_rate'] = 0
+                returns_dict['std'] = 0
+                return returns_dict
+
             returns_dict['n_bets'] = returns_per_race['n_bets'].sum()
             returns_dict['n_races'] = returns_per_race.index.nunique()
             returns_dict['n_hits'] = returns_per_race['hit_or_not'].sum()

@@ -1,14 +1,32 @@
+# -*- coding: utf-8 -*-
 import pandas as pd
 import datetime
 import time
 import re
+import requests
 from tqdm.auto import tqdm
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
 from selenium.webdriver.common.by import By
 
 from modules.constants import UrlPaths
 from ._prepare_chrome_driver import prepare_chrome_driver
+from ._netkeiba_http import build_session, fetch_bytes
+
+# 追加：User-Agent一覧
+USER_AGENTS = [
+     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:115.0) Gecko/20100101 Firefox/115.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.0.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 OPR/85.0.4341.72",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 OPR/85.0.4341.72",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Vivaldi/5.3.2679.55",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Vivaldi/5.3.2679.55",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Brave/1.40.107",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Brave/1.40.107",
+]
 
 def scrape_kaisai_date(from_: str, to_: str):
     """
@@ -17,10 +35,13 @@ def scrape_kaisai_date(from_: str, to_: str):
     """
     print('getting race date from {} to {}'.format(from_, to_))
     # 間の年月一覧を作成
-    date_range = pd.date_range(start=from_, end=to_, freq="M")
+    date_range = pd.date_range(start=from_, end=to_, freq="ME")  # MEに変更
+    print(f'Date range created: {len(date_range)} months to process')
     # 開催日一覧を入れるリスト
     kaisai_date_list = []
+    session = build_session()
     for year, month in tqdm(zip(date_range.year, date_range.month), total=len(date_range)):
+        # print(f'Processing year={year}, month={month}')
         # 取得したdate_rangeから、スクレイピング対象urlを作成する。
         # urlは例えば、https://race.netkeiba.com/top/calendar.html?year=2022&month=7 のような構造になっている。
         query = [
@@ -28,12 +49,13 @@ def scrape_kaisai_date(from_: str, to_: str):
             'month=' + str(month),
         ]
         url = UrlPaths.CALENDAR_URL + '?' + '&'.join(query)
-        html = urlopen(url).read()
+        # サーバー負荷軽減
         time.sleep(1)
-        soup = BeautifulSoup(html, "html.parser")
+        html_bytes = fetch_bytes(session, url, referer=UrlPaths.TOP_URL)
+        soup = BeautifulSoup(html_bytes, "html.parser")
         a_list = soup.find('table', class_='Calendar_Table').find_all('a')
         for a in a_list:
-            kaisai_date_list.append(re.findall('(?<=kaisai_date=)\d+', a['href'])[0])
+            kaisai_date_list.append(re.findall(r'(?<=kaisai_date=)\d+', a['href'])[0])
     return kaisai_date_list
 
 def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
@@ -66,7 +88,7 @@ def scrape_race_id_list(kaisai_date_list: list, waiting_time=10):
                     print(f'error:{e} retry:{i}/{max_attempt} waiting more {waiting_time} seconds')
 
             for a in a_list:
-                race_id = re.findall('(?<=shutuba.html\?race_id=)\d+|(?<=result.html\?race_id=)\d+',
+                race_id = re.findall(r'(?<=shutuba.html\?race_id=)\d+|(?<=result.html\?race_id=)\d+',
                     a.get_attribute('href'))
                 if len(race_id) > 0:
                     race_id_list.append(race_id[0])

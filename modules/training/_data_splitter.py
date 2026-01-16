@@ -1,4 +1,11 @@
-import optuna.integration.lightgbm as lgb_o
+import lightgbm as lgb
+
+try:
+    import optuna.integration.lightgbm as lgb_o
+except ModuleNotFoundError:
+    # 推論（モデルロード/スコア計算）ではoptuna連携は不要。
+    # チューニング実行時のみ optuna-integration[lightgbm] を要求する。
+    lgb_o = None
 
 from modules.constants import ResultsCols
 
@@ -16,18 +23,23 @@ class DataSplitter:
         self.__train_data_optuna, self.__valid_data_optuna = self.__split_by_date(
             self.__train_data, test_size=valid_size
         )
-        self.__lgb_train_optuna = lgb_o.Dataset(
-            self.__train_data_optuna.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1).values,
+        dataset_cls = lgb_o.Dataset if lgb_o is not None else lgb.Dataset
+
+        # 学習・評価に用いる特徴量からは、目的変数・日付・オッズ・馬番を除外する
+        drop_cols = ['rank', 'date', ResultsCols.TANSHO_ODDS, ResultsCols.UMABAN, 'race_id']
+
+        self.__lgb_train_optuna = dataset_cls(
+            self.__train_data_optuna.drop(drop_cols, axis=1, errors='ignore').values,
             self.__train_data_optuna['rank']
         )
-        self.__lgb_valid_optuna = lgb_o.Dataset(
-            self.__valid_data_optuna.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1).values,
+        self.__lgb_valid_optuna = dataset_cls(
+            self.__valid_data_optuna.drop(drop_cols, axis=1, errors='ignore').values,
             self.__valid_data_optuna['rank']
         )
         # 説明変数と目的変数に分ける。開催はエラーなるので一度drop。
-        self.__X_train = self.__train_data.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1)
+        self.__X_train = self.__train_data.drop(drop_cols, axis=1, errors='ignore')
         self.__y_train = self.__train_data['rank']
-        self.__X_test = self.__test_data.drop(['rank', 'date', ResultsCols.TANSHO_ODDS], axis=1)
+        self.__X_test = self.__test_data.drop(drop_cols, axis=1, errors='ignore')
         self.__y_test = self.__test_data['rank']
 
     def __split_by_date(self, df, test_size):

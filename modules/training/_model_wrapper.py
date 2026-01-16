@@ -1,7 +1,12 @@
 import pandas as pd
 import lightgbm as lgb
 from sklearn.metrics import roc_auc_score
-import optuna.integration.lightgbm as lgb_o
+
+try:
+    import optuna.integration.lightgbm as lgb_o
+except ModuleNotFoundError:
+    # 推論では不要。チューニング実行時のみ optuna-integration[lightgbm] を要求する。
+    lgb_o = None
 
 from ._data_splitter import DataSplitter
 
@@ -18,6 +23,12 @@ class ModelWrapper:
         """
         optunaによるチューニングを実行。
         """
+
+        if lgb_o is None:
+            raise ModuleNotFoundError(
+                "Could not find `optuna-integration` for `lightgbm`. "
+                "Please run `pip install optuna-integration[lightgbm]` to enable tuning."
+            )
 
         params = {'objective': 'binary'}
 
@@ -52,14 +63,34 @@ class ModelWrapper:
 
     def train(self, datasets: DataSplitter):
         # 学習
-        self.__lgb_model.fit(datasets.X_train.values, datasets.y_train.values)
+        # DataFrameでfitして、列名をモデル側に残す（推論時の列整列に必須）
+        self.__lgb_model.fit(datasets.X_train, datasets.y_train.values)
+
+        # 学習時のカテゴリ列とカテゴリ順序をモデルに保持（推論時の不一致回避）
+        try:
+            cat_cols = datasets.X_train.select_dtypes(include='category').columns.tolist()
+            if cat_cols:
+                setattr(self.__lgb_model, 'mykeiba_categorical_columns_', list(cat_cols))
+                setattr(
+                    self.__lgb_model,
+                    'mykeiba_categorical_categories_',
+                    {c: list(datasets.X_train[c].cat.categories) for c in cat_cols},
+                )
+        except Exception:
+            pass
+        # 学習時の列名をモデルに保持（predict時の整列に利用）
+        try:
+            self.__lgb_model.feature_name_ = list(datasets.X_train.columns)
+        except Exception:
+            pass
         # AUCを計算して出力
+        # 予測時も列名順に整列（念のため）
         auc_train = roc_auc_score(
-            datasets.y_train, self.__lgb_model.predict_proba(datasets.X_train)[:, 1]
+            datasets.y_train, self.__lgb_model.predict_proba(datasets.X_train.reindex(columns=datasets.X_train.columns))[:, 1]
             )
         auc_test = roc_auc_score(
             datasets.y_test,
-            self.__lgb_model.predict_proba(datasets.X_test)[:, 1]
+            self.__lgb_model.predict_proba(datasets.X_test.reindex(columns=datasets.X_train.columns, fill_value=0))[:, 1]
             )
         # 特徴量の重要度を記憶しておく
         self.__feature_importance = pd.DataFrame({

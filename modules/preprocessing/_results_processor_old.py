@@ -1,4 +1,4 @@
-﻿import pandas as pd
+import pandas as pd
 
 from ._abstract_data_processor import AbstractDataProcessor
 from modules.constants import ResultsCols as Cols
@@ -42,8 +42,6 @@ class ResultsProcessor(AbstractDataProcessor):
         
         # 6/6出走数追加
         df['n_horses'] = df.index.map(df.index.value_counts())
-        # race_id列をインデックスからコピーして保持する
-        df['race_id'] = df.index.astype(str)
         
         # カラム抽出
         df = self._select_columns(df)
@@ -100,7 +98,6 @@ class ResultsProcessor(AbstractDataProcessor):
             #Cols.POPULARITY, # 人気
             #Cols.WEIGHT_AND_DIFF, # 馬体重
             #Cols.TRAINER, # 調教師
-            'race_id',
             'horse_id',
             'jockey_id',
             'trainer_id',
