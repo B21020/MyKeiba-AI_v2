@@ -134,5 +134,4 @@ def save_horse_page_with_results_bin(horse_id_list, out_dir="data/html/horse", s
 ・上記コードをもとに_scrape_html.pyを、馬のデータをスクレイピングする処理のところで、AJAXを直たたきしてスクレイピングする方針に切り替えてください
 ・mainでの実行を一貫させるためにmainでpreparing.scrape_html_horse_with_masterを実行→preparing.scrape_html_horse_with_master内でpreparing.scrape_html_horseを実行してスクレイピングする構造を維持してください。
 ・目標は過去成績が含まれる馬のHTMLファイルをbin形式で保存することです。
-
  ./.venv/Scripts/python.exe -m streamlit run apps/score_app.py --server.address 100.122.78.13 --server.port 8501
