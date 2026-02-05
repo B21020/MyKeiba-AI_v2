@@ -66,7 +66,6 @@ class ResultsProcessor(AbstractDataProcessor):
         # -1(取消)を取り除く
         df = df[df[Cols.RANK] != -1]
         df['rank'] = df[Cols.RANK].map(lambda x:1 if x>0 and x<4 else 0)
-        print(df)
         return df
 
     def _sort(self, raw):

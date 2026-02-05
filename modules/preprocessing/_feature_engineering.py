@@ -184,3 +184,37 @@ class FeatureEngineering:
         self.__data['race_class'] = pd.Categorical(self.__data['race_class'], Master.RACE_CLASS_LIST)
         self.__data = pd.get_dummies(self.__data, columns=['race_class'])
         return self
+
+    def feature_engineering(self):
+        """従来Notebook向けのまとめ処理（互換用）。
+
+        以前のノートブックでは
+        `FeatureEngineering(...).feature_engineering().categorical_processing()`
+        という呼び出しを前提としているため、その互換APIを提供する。
+        """
+        return (
+            self
+            .add_interval()
+            .add_agedays()
+        )
+
+    def categorical_processing(self):
+        """従来Notebook向けのカテゴリ処理まとめ（互換用）。
+
+        ダミー変数化 + ID系ラベルエンコードをまとめて実行する。
+        """
+        return (
+            self
+            .dumminize_ground_state()
+            .dumminize_race_type()
+            .dumminize_sex()
+            .dumminize_weather()
+            .encode_horse_id()
+            .encode_jockey_id()
+            .encode_trainer_id()
+            .encode_owner_id()
+            .encode_breeder_id()
+            .dumminize_kaisai()
+            .dumminize_around()
+            .dumminize_race_class()
+        )

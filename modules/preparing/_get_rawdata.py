@@ -13,74 +13,155 @@ def get_rawdata_results(html_path_list: list):
     """
     print('preparing raw results table')
     race_results = {}
+    failed: dict[str, str] = {}
+
+    # NOTE: html_path_list の要素が Path の場合でも動くように os.fspath で文字列化する
     for html_path in tqdm(html_path_list):
-        with open(html_path, 'rb') as f:
-            try:
+        html_path_str = os.fspath(html_path)
+        try:
+            with open(html_path, 'rb') as f:
                 # 保存してあるbinファイルを読み込む
                 html = f.read()
-                # メインとなるレース結果テーブルデータを取得
-                df = pd.read_html(html)[0]
-                # htmlをsoupオブジェクトに変換
-                soup = BeautifulSoup(html, "lxml")
 
-                # 馬IDをスクレイピング
-                horse_id_list = []
-                horse_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/horse")}
-                )
-                for a in horse_a_list:
-                    horse_id = re.findall(r"\d+", a["href"])
+            if html is None or len(html) == 0:
+                raise ValueError('empty html file')
+
+            # pandas.read_html は bytes のままだと環境依存になりやすいので、先にdecodeしてから読む
+            from io import StringIO
+            lower = html.lower()
+            if (b'euc-jp' in lower) or (b'euc_jp' in lower):
+                decoded = html.decode('euc-jp', errors='ignore')
+            else:
+                decoded = html.decode('utf-8', errors='ignore')
+            decoded = decoded.replace('<br />', 'br')
+
+            dfs = pd.read_html(StringIO(decoded))
+            if dfs is None or len(dfs) == 0:
+                raise ValueError('no tables parsed by read_html')
+
+            # メインとなるレース結果テーブルデータを取得（固定[0]だとページ差分に弱い）
+            df = None
+            for dfi in dfs:
+                if not isinstance(dfi, pd.DataFrame) or dfi.empty:
+                    continue
+                cols = [str(c).replace(' ', '') for c in dfi.columns]
+                if ('着順' in cols) and ('馬名' in cols):
+                    df = dfi.copy()
+                    df.columns = cols
+                    break
+            if df is None:
+                df = dfs[0].copy()
+                df.columns = [str(c).replace(' ', '') for c in df.columns]
+
+            # htmlをsoupオブジェクトに変換
+            soup = BeautifulSoup(decoded, "lxml")
+
+            # レース結果テーブルを特定（summary='レース結果' が無いケースもある）
+            result_table = soup.find("table", attrs={"summary": "レース結果"})
+            horse_href_pattern = re.compile(r"/horse/")
+            if result_table is None:
+                # まず「馬リンク数 == df行数」で一致するtableを優先
+                for table in soup.find_all('table'):
+                    n_horse_links = len(table.find_all('a', href=horse_href_pattern))
+                    if n_horse_links == len(df):
+                        result_table = table
+                        break
+
+            if result_table is None:
+                # 次点: 馬リンクが最も多いtableを採用
+                best_table = None
+                best_n = 0
+                for table in soup.find_all('table'):
+                    n_horse_links = len(table.find_all('a', href=horse_href_pattern))
+                    if n_horse_links > best_n:
+                        best_table = table
+                        best_n = n_horse_links
+                result_table = best_table
+            if result_table is None:
+                raise ValueError('race result table not found in html')
+
+            # 馬IDをスクレイピング
+            horse_id_list = []
+            horse_a_list = result_table.find_all("a", href=horse_href_pattern)
+            for a in horse_a_list:
+                horse_id = re.findall(r"\d+", a.get("href", ""))
+                if horse_id:
                     horse_id_list.append(horse_id[0])
-                df["horse_id"] = horse_id_list
+            if len(horse_id_list) != len(df):
+                # fallback: 行単位で拾う（table内に馬リンク以外のリンクが混ざる/構造差分に対応）
+                horse_id_list = []
+                for tr in result_table.find_all('tr'):
+                    a = tr.find('a', href=horse_href_pattern)
+                    if a is None:
+                        continue
+                    horse_id = re.findall(r"\d+", a.get("href", ""))
+                    if horse_id:
+                        horse_id_list.append(horse_id[0])
+                if len(horse_id_list) != len(df):
+                    raise ValueError(f'horse_id_list length mismatch: {len(horse_id_list)} != {len(df)}')
+            df["horse_id"] = horse_id_list
 
-                # 騎手IDをスクレイピング
-                jockey_id_list = []
-                jockey_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/jockey")}
-                )
-                for a in jockey_a_list:
-                    #'jockey/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
-                    jockey_id = re.findall(r"jockey/result/recent/(\w*)", a["href"])
+            # 騎手IDをスクレイピング
+            jockey_id_list = []
+            jockey_a_list = result_table.find_all("a", href=re.compile(r"/jockey"))
+            for a in jockey_a_list:
+                # 'jockey/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
+                jockey_id = re.findall(r"jockey/result/recent/(\w*)", a.get("href", ""))
+                if jockey_id:
                     jockey_id_list.append(jockey_id[0])
+            if len(jockey_id_list) == len(df):
                 df["jockey_id"] = jockey_id_list
+            else:
+                df["jockey_id"] = NaN
 
-                # 調教師IDをスクレイピング
-                trainer_id_list = []
-                trainer_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/trainer")}
-                )
-                for a in trainer_a_list:
-                    #'trainer/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
-                    trainer_id = re.findall(r"trainer/result/recent/(\w*)", a["href"])
+            # 調教師IDをスクレイピング
+            trainer_id_list = []
+            trainer_a_list = result_table.find_all("a", href=re.compile(r"/trainer"))
+            for a in trainer_a_list:
+                # 'trainer/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
+                trainer_id = re.findall(r"trainer/result/recent/(\w*)", a.get("href", ""))
+                if trainer_id:
                     trainer_id_list.append(trainer_id[0])
+            if len(trainer_id_list) == len(df):
                 df["trainer_id"] = trainer_id_list
+            else:
+                df["trainer_id"] = NaN
 
-                # 馬主IDをスクレイピング
-                owner_id_list = []
-                owner_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/owner")}
-                )
-                for a in owner_a_list:
-                    #'owner/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
-                    owner_id = re.findall(r"owner/result/recent/(\w*)", a["href"])
+            # 馬主IDをスクレイピング
+            owner_id_list = []
+            owner_a_list = result_table.find_all("a", href=re.compile(r"/owner"))
+            for a in owner_a_list:
+                # 'owner/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
+                owner_id = re.findall(r"owner/result/recent/(\w*)", a.get("href", ""))
+                if owner_id:
                     owner_id_list.append(owner_id[0])
+            # 新しいページでは owner リンクが掲載されないことがあるため欠損許容
+            if len(owner_id_list) == len(df):
                 df["owner_id"] = owner_id_list
+            else:
+                df["owner_id"] = NaN
 
-                # インデックスをrace_idにする
-                # use raw string for regex to avoid invalid escape sequence warning
-                race_id = re.findall(r'race\W(\d+)\.bin', html_path)[0]
-                df.index = [race_id] * len(df)
+            # インデックスをrace_idにする
+            race_id_match = re.findall(r'race\W(\d+)\.bin', html_path_str)
+            if not race_id_match:
+                raise ValueError(f'cannot extract race_id from path: {html_path_str}')
+            race_id = race_id_match[0]
+            df.index = [race_id] * len(df)
+            race_results[race_id] = df
 
-                race_results[race_id] = df
-            except Exception as e:
-                print('error at {}'.format(html_path))
-                print(e)
+        except Exception as e:
+            failed[html_path_str] = f'{type(e).__name__}: {e}'
+            print('error at {}'.format(html_path_str))
+            print(e)
     # pd.DataFrame型にして一つのデータにまとめる
     if not race_results:
+        sample_errors = " | ".join(list(failed.values())[:3])
+        sample_paths = " | ".join(list(failed.keys())[:3])
         raise ValueError(
             f"No race result tables were parsed. html_path_list size={len(html_path_list)}. "
-            "Possible causes: (1) html_path_list is empty, (2) target table structure changed, "
-            "(3) earlier exceptions during parsing (they should have been printed above)."
+            f"Sample errors: {sample_errors}. Sample paths: {sample_paths}. "
+            "Possible causes: (1) html_path_list is empty, (2) you passed Path objects / wrong paths, "
+            "(3) you passed non-result pages (e.g. shutuba), (4) target table structure changed."
         )
     race_results_df = pd.concat([race_results[key] for key in race_results])
 
@@ -95,66 +176,116 @@ def get_rawdata_info(html_path_list: list):
     """
     print('preparing raw race_info table')
     race_infos = {}
+    failed: dict[str, str] = {}
     for html_path in tqdm(html_path_list):
+        html_path_str = os.fspath(html_path)
         with open(html_path, 'rb') as f:
             try:
                 # 保存してあるbinファイルを読み込む
                 html = f.read()
 
+                if html is None or len(html) == 0:
+                    raise ValueError('empty html file')
+
+                # bytes のままだと BeautifulSoup/pandas で文字化けや拾い漏れが起きやすいのでdecodeして扱う
+                lower = html.lower()
+                if (b'euc-jp' in lower) or (b'euc_jp' in lower):
+                    decoded = html.decode('euc-jp', errors='ignore')
+                else:
+                    decoded = html.decode('utf-8', errors='ignore')
+                decoded = decoded.replace('<br />', 'br')
+
                 # htmlをsoupオブジェクトに変換
-                soup = BeautifulSoup(html, "lxml")
+                soup = BeautifulSoup(decoded, "lxml")
 
                 # 天候、レースの種類、コースの長さ、馬場の状態、日付、回り、レースクラスをスクレイピング
-                texts = (
-                    soup.find("div", attrs={"class": "data_intro"}).find_all("p")[0].text
-                    + soup.find("div", attrs={"class": "data_intro"}).find_all("p")[1].text
-                )
-                info = re.findall(r'\w+', texts)
+                texts = None
+
+                # 旧レイアウト（data_intro）
+                data_intro = soup.find("div", attrs={"class": "data_intro"})
+                if data_intro is not None:
+                    ps = data_intro.find_all('p')
+                    if len(ps) >= 2:
+                        texts = ps[0].get_text(' ', strip=True) + ps[1].get_text(' ', strip=True)
+
+                # 新レイアウト（RaceData01/02 等）
+                if texts is None:
+                    parts: list[str] = []
+                    for sel in ('.RaceName', '.RaceData01', '.RaceData02', '.RaceData03', '.RaceData04'):
+                        el = soup.select_one(sel)
+                        if el is not None:
+                            parts.append(el.get_text(' ', strip=True))
+                    # title は冗長だが最低限の補助として足す
+                    title = soup.find('title')
+                    if title is not None:
+                        parts.append(title.get_text(' ', strip=True))
+                    texts = ' '.join([p for p in parts if p])
+
+                if not texts:
+                    raise ValueError('race info text not found in html')
+
+                # 旧実装は \w+ で分割していたが、新レイアウトでは「天候:晴」などの記号が重要なので
+                # テキスト全文を使って正規表現/含有で判定する。
+                info = re.findall(r'\w+|[左右直線]+|G\d', texts)
                 df = pd.DataFrame()
                 # 障害レースフラグを初期化
                 hurdle_race_flg = False
-                for text in info:
-                    if text in ["芝", "ダート"]:
-                        df["race_type"] = [text]
-                    if "障" in text:
-                        df["race_type"] = ["障害"]
-                        hurdle_race_flg = True
-                    if "0m" in text:
-                        # 20211212：[0]→[-1]に修正
-                        df["course_len"] = [int(re.findall(r"\d+", text)[-1])]
-                    if text in Master.GROUND_STATE_LIST:
-                        df["ground_state"] = [text]
-                    if text in Master.WEATHER_LIST:
-                        df["weather"] = [text]
-                    if "年" in text:
-                        df["date"] = [text]
-                    if "右" in text:
-                        df["around"] = [Master.AROUND_LIST[0]]
-                    if "左" in text:
-                        df["around"] = [Master.AROUND_LIST[1]]
-                    if "直線" in text:
-                        df["around"] = [Master.AROUND_LIST[2]]
-                    if "新馬" in text:
-                        df["race_class"] = [Master.RACE_CLASS_LIST[0]]
-                    if "未勝利" in text:
-                        df["race_class"] = [Master.RACE_CLASS_LIST[1]]
-                    if ("1勝クラス" in text) or ("500万下" in text):
-                        df["race_class"] = [Master.RACE_CLASS_LIST[2]]
-                    if ("2勝クラス" in text) or ("1000万下" in text):
-                        df["race_class"] = [Master.RACE_CLASS_LIST[3]]
-                    if ("3勝クラス" in text) or ("1600万下" in text):
-                        df["race_class"] = [Master.RACE_CLASS_LIST[4]]
-                    if "オープン" in text:
-                        df["race_class"] = [Master.RACE_CLASS_LIST[5]]
 
-                # グレードレース情報の取得
-                grade_text = soup.find("div", attrs={"class": "data_intro"}).find_all("h1")[0].text
-                if "G3" in grade_text:
-                    df["race_class"] = [Master.RACE_CLASS_LIST[6]] * len(df)
-                elif "G2" in grade_text:
-                    df["race_class"] = [Master.RACE_CLASS_LIST[7]] * len(df)
-                elif "G1" in grade_text:
-                    df["race_class"] = [Master.RACE_CLASS_LIST[8]] * len(df)
+                # レース種別/距離（新旧共通で拾えるよう正規表現）
+                m_course = re.search(r'(芝|ダート|ダ|障害|障)\s*([左右直線内外]*?)\s*(\d{3,4})m', texts)
+                if m_course:
+                    rt = m_course.group(1)
+                    if rt == 'ダ':
+                        rt = 'ダート'
+                    if rt in ('障', '障害'):
+                        rt = '障害'
+                        hurdle_race_flg = True
+                    df['race_type'] = [rt]
+                    df['course_len'] = [int(m_course.group(3))]
+
+                # 天候/馬場
+                for w in Master.WEATHER_LIST:
+                    if w in texts:
+                        df['weather'] = [w]
+                        break
+                for gs in Master.GROUND_STATE_LIST:
+                    if gs in texts:
+                        df['ground_state'] = [gs]
+                        break
+
+                # 日付
+                m_date = re.search(r'(\d{4}年\d{1,2}月\d{1,2}日)', texts)
+                if m_date:
+                    df['date'] = [m_date.group(1)]
+
+                # 回り
+                if '直線' in texts:
+                    df['around'] = [Master.AROUND_LIST[2]]
+                elif '右' in texts:
+                    df['around'] = [Master.AROUND_LIST[0]]
+                elif '左' in texts:
+                    df['around'] = [Master.AROUND_LIST[1]]
+
+                # クラス（グレード/条件戦）
+                if 'G3' in texts:
+                    df['race_class'] = [Master.RACE_CLASS_LIST[6]]
+                elif 'G2' in texts:
+                    df['race_class'] = [Master.RACE_CLASS_LIST[7]]
+                elif 'G1' in texts:
+                    df['race_class'] = [Master.RACE_CLASS_LIST[8]]
+                else:
+                    if '新馬' in texts:
+                        df['race_class'] = [Master.RACE_CLASS_LIST[0]]
+                    elif '未勝利' in texts:
+                        df['race_class'] = [Master.RACE_CLASS_LIST[1]]
+                    elif ('1勝クラス' in texts) or ('500万下' in texts):
+                        df['race_class'] = [Master.RACE_CLASS_LIST[2]]
+                    elif ('2勝クラス' in texts) or ('1000万下' in texts):
+                        df['race_class'] = [Master.RACE_CLASS_LIST[3]]
+                    elif ('3勝クラス' in texts) or ('1600万下' in texts):
+                        df['race_class'] = [Master.RACE_CLASS_LIST[4]]
+                    elif 'オープン' in texts:
+                        df['race_class'] = [Master.RACE_CLASS_LIST[5]]
 
                 # 障害レースの場合
                 if hurdle_race_flg:
@@ -162,14 +293,23 @@ def get_rawdata_info(html_path_list: list):
                     df["race_class"] = [Master.RACE_CLASS_LIST[9]]
 
                 # インデックスをrace_idにする
-                race_id = re.findall(r'race\W(\d+)\.bin', html_path)[0]
+                race_id = re.findall(r'race\W(\d+)\.bin', html_path_str)[0]
                 df.index = [race_id] * len(df)
 
                 race_infos[race_id] = df
             except Exception as e:
-                print('error at {}'.format(html_path))
+                print('error at {}'.format(html_path_str))
                 print(e)
+                failed[html_path_str] = f'{type(e).__name__}: {e}'
     # pd.DataFrame型にして一つのデータにまとめる
+    if not race_infos:
+        sample_errors = " | ".join(list(failed.values())[:3])
+        sample_paths = " | ".join(list(failed.keys())[:3])
+        raise ValueError(
+            f"No race info tables were parsed (No objects to concatenate). html_path_list size={len(html_path_list)}. "
+            f"Sample errors: {sample_errors}. Sample paths: {sample_paths}."
+        )
+
     race_infos_df = pd.concat([race_infos[key] for key in race_infos])
 
     return race_infos_df
@@ -184,7 +324,8 @@ def get_rawdata_return(html_path_list: list):
     for html_path in tqdm(html_path_list):
         race_id = None
         try:
-            m = re.findall(r'race\W(\d+)\.bin', html_path)
+            html_path_str = os.fspath(html_path)
+            m = re.findall(r'race\W(\d+)\.bin', html_path_str)
             race_id = m[0] if len(m) > 0 else None
 
             with open(html_path, 'rb') as f:
@@ -301,9 +442,9 @@ def get_rawdata_return(html_path_list: list):
             race_return[race_id] = df
 
         except Exception as e:
-            key = race_id if race_id is not None else str(html_path)
+            key = race_id if race_id is not None else html_path_str
             failed[key] = f'{type(e).__name__}: {e}'
-            print('error at {}'.format(html_path))
+            print('error at {}'.format(html_path_str))
             print(e)
 
     # pd.DataFrame型にして一つのデータにまとめる
