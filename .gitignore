@@ -17,6 +17,10 @@ playground.ipynb
 output/**/*.md
 output/**/*.png
 
+# 生成物（ローカル実行の出力）
+data/**/*.pickle.bak_*
+images/output_*.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
