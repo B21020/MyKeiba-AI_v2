@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractstaticmethod
+from typing import Optional
 import pandas as pd
 
 from modules.constants import ResultsCols
@@ -8,15 +9,17 @@ class AbstractBetPolicy(metaclass=ABCMeta):
     クラスの型を決めるための抽象クラス。
     """
     @abstractstaticmethod
+    def judge(score_table: pd.DataFrame, **kwargs) -> dict:
+        """購入方針を判定し、Simulatorが解釈できるactionsを返す。
 
         例)
-        {'202101010101': {'tansho': [6, 8], 'fukusho': [4, 5]},
-        '202101010102': {'tansho': [1], 'fukusho': [4]},
-        '202101010103': {'tansho': [6], 'fukusho': []},
-        '202101010104': {'tansho': [5], 'fukusho': [11]},
-        ...}
+        {
+            '202101010101': {'tansho': [6, 8], 'fukusho': [4, 5]},
+            '202101010102': {'tansho': [1], 'fukusho': [4]},
+            ...
+        }
         """
-        pass
+        raise NotImplementedError
 
 class BetPolicyTansho:
     """
@@ -226,8 +229,9 @@ class BetPolicyUmarenNagashiDualScore:
 
     @staticmethod
     def judge(
-        return bet_dict
-
+        score_table: pd.DataFrame,
+        anchor_threshold: float,
+        partner_threshold: float,
         anchor_strategy: str = 'top1',
         partner_top_k: Optional[int] = None,
         score_anchor_col: str = 'score_anchor',
