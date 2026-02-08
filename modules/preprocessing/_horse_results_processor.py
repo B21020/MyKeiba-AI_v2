@@ -7,11 +7,11 @@ from modules.constants import HorseResultsCols as Cols
 
 
 class HorseResultsProcessor(AbstractDataProcessor):
-    def __init__(self, filepath):
+    def __init__(self, filepath, raw_data=None):
         """
         初期処理
         """
-        super().__init__(filepath)
+        super().__init__(filepath, raw_data=raw_data)
     
     def _preprocess(self):
         """

@@ -64,7 +64,30 @@ class ModelWrapper:
     def train(self, datasets: DataSplitter):
         # 学習
         # DataFrameでfitして、列名をモデル側に残す（推論時の列整列に必須）
-        self.__lgb_model.fit(datasets.X_train, datasets.y_train.values)
+        X_train = datasets.X_train
+        y_train = datasets.y_train.values
+
+        fit_kwargs = {}
+        # early stopping（可能な場合のみ）
+        try:
+            X_valid = getattr(datasets, 'X_valid', None)
+            y_valid = getattr(datasets, 'y_valid', None)
+            if X_valid is not None and y_valid is not None and len(X_valid) > 0:
+                fit_kwargs.update(
+                    {
+                        'eval_set': [(X_valid, getattr(y_valid, 'values', y_valid))],
+                        'eval_metric': 'auc',
+                        'callbacks': [lgb.early_stopping(stopping_rounds=50, verbose=False)],
+                    }
+                )
+        except Exception:
+            fit_kwargs = {}
+
+        try:
+            self.__lgb_model.fit(X_train, y_train, **fit_kwargs)
+        except Exception:
+            # 互換性のためフォールバック
+            self.__lgb_model.fit(X_train, y_train)
 
         # 学習時のカテゴリ列とカテゴリ順序をモデルに保持（推論時の不一致回避）
         try:

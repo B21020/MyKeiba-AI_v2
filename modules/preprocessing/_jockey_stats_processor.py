@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from ._abstract_data_processor import AbstractDataProcessor
@@ -80,33 +81,72 @@ class JockeyStatsProcessor(AbstractDataProcessor):
         df['_jockey_key'] = df[jockey_key_col].astype(str)
 
         # 騎手ごとに日付順でソート
+        # NOTE: 同日複数騎乗がある場合、単純な shift(1) だと「同日の別レース結果」が混入し得る。
+        #       ここでは「その日より前のレースのみ」を使うよう、日付単位で一括計算する。
         df = df.sort_values(['_jockey_key', 'date'])
 
-        # 騎手ごとに直近10/50レースの複勝率・騎乗数を計算（リーク防止のため shift(1) 後に rolling）
-        def _calc_group(group: pd.DataFrame) -> pd.DataFrame:
-            # 現在レースを含めないために1行シフト
-            plc_shifted = group['plc_flag'].shift(1)
-            # 有効な過去レースの有無（NaNでないものをカウント）
-            ride_flag = (~plc_shifted.isna()).astype(int)
+        def _calc_group_strict(group: pd.DataFrame) -> pd.DataFrame:
+            group = group.copy()
 
-            # 直近10レース
-            rides_10 = ride_flag.rolling(window=10, min_periods=1).sum()
-            rate_10 = plc_shifted.rolling(window=10, min_periods=1).mean()
+            # 日付昇順（安定ソート）
+            group = group.sort_values(['date'], kind='mergesort')
 
-            # 直近50レース
-            rides_50 = ride_flag.rolling(window=50, min_periods=1).sum()
-            rate_50 = plc_shifted.rolling(window=50, min_periods=1).mean()
+            dates = group['date'].to_numpy()
+            flags = group['plc_flag'].to_numpy(dtype=np.int8, copy=False)
 
-            group['jockey_rides_10_all'] = rides_10.fillna(0).astype(int)
-            group['jockey_plc_rate_10_all'] = rate_10
-            group['jockey_rides_50_all'] = rides_50.fillna(0).astype(int)
-            group['jockey_plc_rate_50_all'] = rate_50
+            out_rate_10 = np.empty(len(group), dtype='float64')
+            out_rides_10 = np.empty(len(group), dtype='int32')
+            out_rate_50 = np.empty(len(group), dtype='float64')
+            out_rides_50 = np.empty(len(group), dtype='int32')
 
-            # 過去レースが1件以上あるかどうか（ここでは50レース窓を基準に判定）
-            group['jockey_has_history_flag'] = (rides_50 > 0).astype(int)
+            last10: list[int] = []
+            last50: list[int] = []
+            sum10 = 0
+            sum50 = 0
+
+            i = 0
+            while i < len(group):
+                d = dates[i]
+                j = i
+                while j < len(group) and dates[j] == d:
+                    j += 1
+
+                # この日の全行に「前日まで」の値を付与
+                rides10 = len(last10)
+                rides50 = len(last50)
+                rate10 = (sum10 / rides10) if rides10 > 0 else np.nan
+                rate50 = (sum50 / rides50) if rides50 > 0 else np.nan
+
+                out_rate_10[i:j] = rate10
+                out_rides_10[i:j] = rides10
+                out_rate_50[i:j] = rate50
+                out_rides_50[i:j] = rides50
+
+                # 当日の結果を履歴に追加（当日内の順序は特徴量に影響しない）
+                for k in range(i, j):
+                    f = int(flags[k])
+
+                    last10.append(f)
+                    sum10 += f
+                    if len(last10) > 10:
+                        sum10 -= last10.pop(0)
+
+                    last50.append(f)
+                    sum50 += f
+                    if len(last50) > 50:
+                        sum50 -= last50.pop(0)
+
+                i = j
+
+            group['jockey_plc_rate_10_all'] = out_rate_10
+            group['jockey_rides_10_all'] = out_rides_10.astype(int)
+            group['jockey_plc_rate_50_all'] = out_rate_50
+            group['jockey_rides_50_all'] = out_rides_50.astype(int)
+            group['jockey_has_history_flag'] = (out_rides_50 > 0).astype(int)
             return group
 
-        df = df.groupby('_jockey_key', group_keys=False).apply(_calc_group)
+        # apply は騎手ごとに独立計算（同日リークを遮断）
+        df = df.groupby('_jockey_key', group_keys=False, sort=False).apply(_calc_group_strict)
 
         # 出力用の DataFrame 整形
         # jockey_id 列がない場合は _jockey_key をそのまま用いる

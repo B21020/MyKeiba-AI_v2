@@ -110,6 +110,180 @@ class BettingTickets:
             return_amount = float((hits_row * ret_vals * amount / 100).sum())
         return int(n_bets), bet_amount, return_amount
 
+
+    def bet_umaren_pairs(self, race_id: str, pairs: list, amount: float):
+        """ 
+        馬連をペア指定で賭ける関数。
+
+        pairs: [(umaban1, umaban2), ...] の形式。
+               馬連なので順序は無視し、(a,b) と (b,a) は同一として扱う。
+        """
+        if not pairs:
+            return 0, 0, 0
+
+        normalized_pairs = set()
+        for pair in pairs:
+            if pair is None or len(pair) != 2:
+                continue
+            a = pd.to_numeric(pair[0], errors='coerce')
+            b = pd.to_numeric(pair[1], errors='coerce')
+            if pd.isna(a) or pd.isna(b):
+                continue
+            a, b = int(a), int(b)
+            if a == b:
+                continue
+            x, y = (a, b) if a < b else (b, a)
+            normalized_pairs.add((x, y))
+
+        if not normalized_pairs:
+            return 0, 0, 0
+
+        n_bets = len(normalized_pairs)
+        bet_amount = n_bets * amount
+
+        table_1R = self.__returnTablesUmaren.loc[race_id]
+        if isinstance(table_1R, pd.Series):
+            table_df = table_1R.to_frame().T
+        else:
+            table_df = table_1R
+
+        return_amount = 0.0
+        for _, row in table_df.iterrows():
+            a = pd.to_numeric(row['win_0'], errors='coerce')
+            b = pd.to_numeric(row['win_1'], errors='coerce')
+            if pd.isna(a) or pd.isna(b):
+                continue
+            a, b = int(a), int(b)
+            key = (a, b) if a < b else (b, a)
+            if key in normalized_pairs:
+                return_amount += float(row['return']) * amount / 100
+
+        return n_bets, bet_amount, float(return_amount)
+
+    def bet_umaren_nagashi(self, race_id: str, anchor, partners: list, amount: float):
+        """ 
+        馬連の流し（軸→相手）をシミュレーションする。
+
+        - anchor: 軸の馬番（int）または複数軸（list[int]）
+        - partners: 相手馬番のリスト
+        - 内部的には (軸, 相手) のペア集合に変換し、bet_umaren_pairs を呼ぶ。
+        """
+        if anchor is None:
+            return 0, 0, 0
+
+        if partners is None:
+            partners = []
+
+        def _to_int_list(values) -> list:
+            s = pd.to_numeric(pd.Series(list(values)), errors='coerce')
+            return s.dropna().astype(int).tolist()
+
+        if isinstance(anchor, (list, tuple, set, np.ndarray, pd.Series)):
+            anchors = _to_int_list(anchor)
+        else:
+            a = pd.to_numeric(anchor, errors='coerce')
+            if pd.isna(a):
+                return 0, 0, 0
+            anchors = [int(a)]
+
+        partners_norm = _to_int_list(partners)
+        if not anchors or not partners_norm:
+            return 0, 0, 0
+
+        pairs = []
+        for a in anchors:
+            for b in partners_norm:
+                if a == b:
+                    continue
+                pairs.append((a, b))
+
+        return self.bet_umaren_pairs(race_id, pairs, amount)
+
+    def bet_umatan_pairs(self, race_id: str, pairs: list, amount: float):
+        """ 
+        馬単をペア指定で賭ける関数。
+
+        pairs: [(1着, 2着), ...] の形式（順序は有効）。
+        """
+        if not pairs:
+            return 0, 0, 0
+
+        normalized_pairs = set()
+        for pair in pairs:
+            if pair is None or len(pair) != 2:
+                continue
+            a = pd.to_numeric(pair[0], errors='coerce')
+            b = pd.to_numeric(pair[1], errors='coerce')
+            if pd.isna(a) or pd.isna(b):
+                continue
+            a, b = int(a), int(b)
+            if a == b:
+                continue
+            normalized_pairs.add((a, b))
+
+        if not normalized_pairs:
+            return 0, 0, 0
+
+        n_bets = len(normalized_pairs)
+        bet_amount = n_bets * amount
+
+        table_1R = self.__returnTablesUmatan.loc[race_id]
+        if isinstance(table_1R, pd.Series):
+            table_df = table_1R.to_frame().T
+        else:
+            table_df = table_1R
+
+        return_amount = 0.0
+        for _, row in table_df.iterrows():
+            a = pd.to_numeric(row['win_0'], errors='coerce')
+            b = pd.to_numeric(row['win_1'], errors='coerce')
+            if pd.isna(a) or pd.isna(b):
+                continue
+            key = (int(a), int(b))
+            if key in normalized_pairs:
+                return_amount += float(row['return']) * amount / 100
+
+        return n_bets, bet_amount, float(return_amount)
+
+    def bet_umatan_nagashi(self, race_id: str, anchor, partners: list, amount: float):
+        """ 
+        馬単の流し（軸→相手）をシミュレーションする。
+
+        - anchor: 軸の馬番（int）または複数軸（list[int]）
+        - partners: 相手馬番のリスト（2着固定）
+        - 内部的には (1着=軸, 2着=相手) のペア集合に変換し、bet_umatan_pairs を呼ぶ。
+        """
+        if anchor is None:
+            return 0, 0, 0
+
+        if partners is None:
+            partners = []
+
+        def _to_int_list(values) -> list:
+            s = pd.to_numeric(pd.Series(list(values)), errors='coerce')
+            return s.dropna().astype(int).tolist()
+
+        if isinstance(anchor, (list, tuple, set, np.ndarray, pd.Series)):
+            anchors = _to_int_list(anchor)
+        else:
+            a = pd.to_numeric(anchor, errors='coerce')
+            if pd.isna(a):
+                return 0, 0, 0
+            anchors = [int(a)]
+
+        partners_norm = _to_int_list(partners)
+        if not anchors or not partners_norm:
+            return 0, 0, 0
+
+        pairs = []
+        for a in anchors:
+            for b in partners_norm:
+                if a == b:
+                    continue
+                pairs.append((a, b))
+
+        return self.bet_umatan_pairs(race_id, pairs, amount)
+
     def _bet_umatan(self, race_id: str, umaban: list, amount: float):
         """
         馬単を一枚のみ賭ける場合の関数。umabanは[1着予想, 2着予想]の形で馬番を入れる。

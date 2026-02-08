@@ -50,6 +50,19 @@ class ResultsProcessor(AbstractDataProcessor):
 
         # 馬番順にソート
         df = self._sort(df)
+
+        # --- 重複除去（重要） ---
+        # 1レース内で (race_id, umaban) が重複すると、下流のマージ/集計で
+        # 行が爆発（例: 18×18=324）して学習・評価が壊れる。
+        # 基本的に 1レース内の馬番は一意なので、ここで強制的に一意化する。
+        before = len(df)
+        df = df.drop_duplicates(subset=['race_id', Cols.UMABAN], keep='first')
+        after = len(df)
+        if after != before:
+            print(f"[ResultsProcessor] dropped duplicated rows: {before - after:,} (from {before:,} to {after:,})")
+
+        # n_horses を重複除去後の値で再計算
+        df['n_horses'] = df.index.map(df.index.value_counts())
         
         return df
         

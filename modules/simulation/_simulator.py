@@ -43,6 +43,58 @@ class Simulator:
                         n_bets, bet_amount, return_amount = self.betting_tickets.bet_umaren_box(
                             race_id, actions[race_id][action], 1
                             )
+                    elif action == 'umaren_pairs':
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_umaren_pairs(
+                            race_id, actions[race_id][action], 1
+                            )
+                    elif action == 'umaren_nagashi':
+                        payload = actions[race_id][action]
+
+                        # 互換: {'anchor': x, 'partners': [...]} / (x, [...]) / [x, ...partners]
+                        anchor = None
+                        partners = []
+
+                        if isinstance(payload, dict):
+                            anchor = payload.get('anchor')
+                            partners = payload.get('partners', [])
+                        elif isinstance(payload, (tuple, list)) and len(payload) == 2 and isinstance(payload[1], (list, tuple, set)):
+                            anchor, partners = payload[0], list(payload[1])
+                        elif isinstance(payload, (list, tuple)):
+                            if len(payload) >= 2:
+                                anchor = payload[0]
+                                partners = list(payload[1:])
+                            else:
+                                anchor = payload
+                        else:
+                            anchor = payload
+
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_umaren_nagashi(
+                            race_id, anchor, partners, 1
+                        )
+                    elif action == 'umatan_nagashi':
+                        payload = actions[race_id][action]
+
+                        # 互換: {'anchor': x, 'partners': [...]} / (x, [...]) / [x, ...partners]
+                        anchor = None
+                        partners = []
+
+                        if isinstance(payload, dict):
+                            anchor = payload.get('anchor')
+                            partners = payload.get('partners', [])
+                        elif isinstance(payload, (tuple, list)) and len(payload) == 2 and isinstance(payload[1], (list, tuple, set)):
+                            anchor, partners = payload[0], list(payload[1])
+                        elif isinstance(payload, (list, tuple)):
+                            if len(payload) >= 2:
+                                anchor = payload[0]
+                                partners = list(payload[1:])
+                            else:
+                                anchor = payload
+                        else:
+                            anchor = payload
+
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_umatan_nagashi(
+                            race_id, anchor, partners, 1
+                        )
                     elif action == 'umatan':
                         n_bets, bet_amount, return_amount = self.betting_tickets.bet_umatan_box(
                             race_id, actions[race_id][action], 1
