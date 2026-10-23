@@ -29,7 +29,8 @@ class WinDataSplitter:
         # 学習・評価に用いる特徴量からは、目的変数・日付・オッズ・馬番・race_id を除外する
         # - `rank` は結果由来なのでリーク防止のため除外
         # - `win` は本 Splitter の目的変数
-        drop_cols = ['rank', 'win', 'date', ResultsCols.TANSHO_ODDS, ResultsCols.UMABAN, 'race_id']
+        # - `longshot` は結果由来のラベルなので除外
+        drop_cols = ['rank', 'win', 'longshot', 'date', ResultsCols.TANSHO_ODDS, ResultsCols.UMABAN, 'race_id']
 
         # Optuna/LightGBM用のDatasetはチューニング時のみ必要。
         self.__lgb_train_optuna = None
@@ -61,18 +62,37 @@ class WinDataSplitter:
             free_raw_data=True,
         )
 
+    @staticmethod
+    def __get_race_keys(index) -> pd.Index:
+        if isinstance(index, pd.MultiIndex):
+            return index.get_level_values(0)
+        return index
+
+    @staticmethod
+    def __select_by_race_ids(df: pd.DataFrame, race_id_list) -> pd.DataFrame:
+        if 'race_id' in df.columns:
+            sliced = df[df['race_id'].isin(race_id_list)]
+            if not sliced.empty:
+                return sliced
+            # 互換: 旧pickleでは race_id_list が index のキー（行ID）になっている場合がある
+            try:
+                return df.loc[race_id_list]
+            except Exception:
+                return sliced
+        return df.loc[race_id_list]
+
     def __split_by_date(self, df, test_size):
         date_series = df['date']
-        if isinstance(df.index, pd.MultiIndex):
-            race_keys = df.index.get_level_values(0)
+        if 'race_id' in df.columns:
+            race_keys = df['race_id']
         else:
-            race_keys = df.index
+            race_keys = self.__get_race_keys(df.index)
         date_per_race = date_series.groupby(race_keys).first()
         sorted_id_list = date_per_race.sort_values().index
         train_id_list = sorted_id_list[: round(len(sorted_id_list) * (1 - test_size))]
         test_id_list = sorted_id_list[round(len(sorted_id_list) * (1 - test_size)) :]
-        train = df.loc[train_id_list]
-        test = df.loc[test_id_list]
+        train = self.__select_by_race_ids(df, train_id_list)
+        test = self.__select_by_race_ids(df, test_id_list)
         return train, test
 
     @property
@@ -122,6 +142,16 @@ class WinDataSplitter:
     @property
     def y_test(self):
         return self.__y_test
+
+    @property
+    def X_valid(self):
+        """校正（calibration）用の検証データ。"""
+        return self.__X_valid_optuna
+
+    @property
+    def y_valid(self):
+        """校正（calibration）用の検証ラベル。"""
+        return self.__y_valid_optuna
 
     @property
     def tansho_odds_test(self):

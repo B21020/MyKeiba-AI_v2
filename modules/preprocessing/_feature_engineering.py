@@ -241,3 +241,51 @@ class FeatureEngineering:
         self.__data['race_class'] = pd.Categorical(self.__data['race_class'], Master.RACE_CLASS_LIST)
         self.__data = pd.get_dummies(self.__data, columns=['race_class'])
         return self
+
+    def add_race_relative_features(self, target_cols=None):
+        """レース内での相対的な位置を表す特徴量を追加する。
+
+        各指定カラムに対して:
+        - ``{col}_zR``: レース内 z-score (平均0, 標準偏差1)
+        - ``{col}_rnkR``: レース内順位 (1=最小)
+
+        をfloat32で追加する。存在しないカラムは自動スキップ。
+        ``race_id`` 列が必要。
+        """
+        if target_cols is None:
+            target_cols = [
+                # 過去成績（5R / 9R / allR）
+                '着順_5R', '賞金_5R', '着差_5R', 'time_seconds_5R',
+                '着順_9R', '賞金_9R', '着差_9R', 'time_seconds_9R',
+                '着順_allR', '賞金_allR', '着差_allR', 'time_seconds_allR',
+                # コーナー通過順位
+                'first_corner_5R', 'final_corner_5R',
+                'first_corner_allR', 'final_corner_allR',
+                # 位置取り変動
+                'first_to_rank_5R', 'first_to_final_5R', 'final_to_rank_5R',
+                'first_to_rank_allR', 'first_to_final_allR', 'final_to_rank_allR',
+                # 馬属性
+                '斤量', '年齢', '体重', '体重変化',
+                # 騎手統計
+                'jockey_plc_rate_10_all', 'jockey_plc_rate_50_all',
+                # 時系列
+                'interval', 'age_days',
+            ]
+
+        target_cols = [c for c in target_cols if c in self.__data.columns]
+        if not target_cols:
+            return self
+
+        eps = 1e-6
+        for col in target_cols:
+            grouped = self.__data.groupby('race_id')[col]
+            race_mean = grouped.transform('mean')
+            race_std = grouped.transform('std').fillna(0).clip(lower=eps)
+            self.__data[f'{col}_zR'] = (
+                (self.__data[col] - race_mean) / race_std
+            ).astype('float32')
+            self.__data[f'{col}_rnkR'] = grouped.rank(
+                method='min', ascending=True
+            ).astype('float32')
+
+        return self

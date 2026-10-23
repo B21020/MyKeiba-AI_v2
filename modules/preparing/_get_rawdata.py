@@ -7,6 +7,15 @@ from bs4 import BeautifulSoup
 import re
 from modules.constants import Master
 
+
+def _find_result_table(soup):
+    """新旧どちらの summary 属性にも対応してレース結果テーブルを返す。"""
+    table = soup.find("table", attrs={"summary": "レース結果"})
+    if table is None:
+        table = soup.find("table", attrs={"summary": "全着順"})
+    return table
+
+
 def get_rawdata_results(html_path_list: list):
     """
     raceページのhtmlを受け取って、レース結果テーブルに変換する関数。
@@ -23,48 +32,56 @@ def get_rawdata_results(html_path_list: list):
                 # htmlをsoupオブジェクトに変換
                 soup = BeautifulSoup(html, "lxml")
 
-                # 馬IDをスクレイピング
+                # レース結果テーブルを取得（新旧 summary 属性に対応）
+                result_table = _find_result_table(soup)
+                if result_table is None:
+                    raise ValueError("レース結果テーブルが見つかりません")
+
+                # 馬IDをスクレイピング（相対/絶対パス両対応）
                 horse_id_list = []
-                horse_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/horse")}
+                horse_a_list = result_table.find_all(
+                    "a", attrs={"href": re.compile(r"/horse/(?!ped)")}
                 )
                 for a in horse_a_list:
                     horse_id = re.findall(r"\d+", a["href"])
                     horse_id_list.append(horse_id[0])
                 df["horse_id"] = horse_id_list
 
-                # 騎手IDをスクレイピング
+                # 騎手IDをスクレイピング（相対/絶対パス両対応）
                 jockey_id_list = []
-                jockey_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/jockey")}
+                jockey_a_list = result_table.find_all(
+                    "a", attrs={"href": re.compile(r"jockey")}
                 )
                 for a in jockey_a_list:
-                    #'jockey/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
-                    jockey_id = re.findall(r"jockey/result/recent/(\w*)", a["href"])
-                    jockey_id_list.append(jockey_id[0])
+                    jockey_id = re.findall(r"jockey/result/recent/(\w+)", a["href"])
+                    if jockey_id:
+                        jockey_id_list.append(jockey_id[0])
                 df["jockey_id"] = jockey_id_list
 
-                # 調教師IDをスクレイピング
+                # 調教師IDをスクレイピング（相対/絶対パス両対応）
                 trainer_id_list = []
-                trainer_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/trainer")}
+                trainer_a_list = result_table.find_all(
+                    "a", attrs={"href": re.compile(r"trainer")}
                 )
                 for a in trainer_a_list:
-                    #'trainer/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
-                    trainer_id = re.findall(r"trainer/result/recent/(\w*)", a["href"])
-                    trainer_id_list.append(trainer_id[0])
+                    trainer_id = re.findall(r"trainer/result/recent/(\w+)", a["href"])
+                    if trainer_id:
+                        trainer_id_list.append(trainer_id[0])
                 df["trainer_id"] = trainer_id_list
 
-                # 馬主IDをスクレイピング
+                # 馬主IDをスクレイピング（相対/絶対パス両対応、新HTMLでは欠損の場合あり）
                 owner_id_list = []
-                owner_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/owner")}
+                owner_a_list = result_table.find_all(
+                    "a", attrs={"href": re.compile(r"owner/result/recent/")}
                 )
                 for a in owner_a_list:
-                    #'owner/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
-                    owner_id = re.findall(r"owner/result/recent/(\w*)", a["href"])
-                    owner_id_list.append(owner_id[0])
-                df["owner_id"] = owner_id_list
+                    owner_id = re.findall(r"owner/result/recent/(\w+)", a["href"])
+                    if owner_id:
+                        owner_id_list.append(owner_id[0])
+                if len(owner_id_list) == len(df):
+                    df["owner_id"] = owner_id_list
+                else:
+                    df["owner_id"] = NaN
 
                 # インデックスをrace_idにする
                 # use raw string for regex to avoid invalid escape sequence warning
@@ -89,9 +106,60 @@ def get_rawdata_results(html_path_list: list):
 
     return race_results_df
 
+def _extract_race_info_texts(soup):
+    """
+    レース情報テキストとグレードテキストを抽出するヘルパー。
+    旧HTML（data_intro）と新HTML（RaceList_Item02）の両方に対応。
+
+    Returns
+    -------
+    (texts: str, grade_text: str) or None
+    """
+    # --- 旧HTML: div.data_intro ---
+    data_intro = soup.find("div", attrs={"class": "data_intro"})
+    if data_intro:
+        ps = data_intro.find_all("p")
+        if len(ps) >= 2:
+            texts = ps[0].text + ps[1].text
+        elif len(ps) == 1:
+            texts = ps[0].text
+        else:
+            return None
+        h1s = data_intro.find_all("h1")
+        grade_text = h1s[0].text if h1s else ""
+        return texts, grade_text
+
+    # --- 新HTML: div.RaceList_Item02 ---
+    item02 = soup.find("div", class_="RaceList_Item02")
+    if item02 is None:
+        return None
+
+    d01 = item02.find("div", class_="RaceData01")
+    d02 = item02.find("div", class_="RaceData02")
+    texts = ""
+    if d01:
+        texts += d01.get_text()
+    if d02:
+        texts += d02.get_text()
+
+    # 新HTMLでは日付がRaceData内に無いため、og:titleメタタグから取得
+    og_title = soup.find("meta", attrs={"property": "og:title"})
+    if og_title:
+        date_match = re.search(r'\d{4}年\d{1,2}月\d{1,2}日', og_title.get("content", ""))
+        if date_match:
+            texts += " " + date_match.group(0)
+
+    # グレードテキストはh1.RaceNameから取得
+    race_name_h1 = item02.find("h1", class_="RaceName")
+    grade_text = race_name_h1.get_text() if race_name_h1 else ""
+
+    return texts, grade_text
+
+
 def get_rawdata_info(html_path_list: list):
     """
     raceページのhtmlを受け取って、レース情報テーブルに変換する関数。
+    旧HTML（data_intro）と新HTML（RaceList_Item02 / RaceData01 / RaceData02）の両方に対応。
     """
     print('preparing raw race_info table')
     race_infos = {}
@@ -105,10 +173,12 @@ def get_rawdata_info(html_path_list: list):
                 soup = BeautifulSoup(html, "lxml")
 
                 # 天候、レースの種類、コースの長さ、馬場の状態、日付、回り、レースクラスをスクレイピング
-                texts = (
-                    soup.find("div", attrs={"class": "data_intro"}).find_all("p")[0].text
-                    + soup.find("div", attrs={"class": "data_intro"}).find_all("p")[1].text
-                )
+                result = _extract_race_info_texts(soup)
+                if result is None:
+                    print('error at {}: no data_intro or RaceList_Item02'.format(html_path))
+                    continue
+                texts, grade_text = result
+
                 info = re.findall(r'\w+', texts)
                 df = pd.DataFrame()
                 # 障害レースフラグを初期化
@@ -116,6 +186,11 @@ def get_rawdata_info(html_path_list: list):
                 for text in info:
                     if text in ["芝", "ダート"]:
                         df["race_type"] = [text]
+                    # 新HTML対応: "芝1200m" や "ダ1400m" 形式の複合トークン
+                    if re.match(r'^芝\d', text):
+                        df["race_type"] = ["芝"]
+                    if re.match(r'^ダ\d', text):
+                        df["race_type"] = ["ダート"]
                     if "障" in text:
                         df["race_type"] = ["障害"]
                         hurdle_race_flg = True
@@ -148,7 +223,6 @@ def get_rawdata_info(html_path_list: list):
                         df["race_class"] = [Master.RACE_CLASS_LIST[5]]
 
                 # グレードレース情報の取得
-                grade_text = soup.find("div", attrs={"class": "data_intro"}).find_all("h1")[0].text
                 if "G3" in grade_text:
                     df["race_class"] = [Master.RACE_CLASS_LIST[6]] * len(df)
                 elif "G2" in grade_text:

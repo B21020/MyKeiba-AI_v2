@@ -5,11 +5,11 @@ from modules.constants import ResultsCols as Cols
 
 
 class ResultsProcessor(AbstractDataProcessor):
-    def __init__(self, filepath):
+    def __init__(self, filepath=None, raw_data=None):
         """
         初期処理
         """
-        super().__init__(filepath)
+        super().__init__(filepath, raw_data=raw_data)
     
     def _preprocess(self):
         """
@@ -78,8 +78,10 @@ class ResultsProcessor(AbstractDataProcessor):
         df[Cols.RANK] = pd.to_numeric(df[Cols.RANK], errors='coerce').fillna(0).astype(int)
         # -1(取消)を取り除く
         df = df[df[Cols.RANK] != -1]
-        df['rank'] = df[Cols.RANK].map(lambda x:1 if x>0 and x<4 else 0)
-        print(df)
+        # place（複勝圏=3着以内）
+        df['rank'] = df[Cols.RANK].map(lambda x: 1 if x > 0 and x < 4 else 0)
+        # win（1着）
+        df['win'] = df[Cols.RANK].map(lambda x: 1 if x == 1 else 0)
         return df
 
     def _sort(self, raw):
@@ -123,6 +125,7 @@ class ResultsProcessor(AbstractDataProcessor):
             '体重',
             '体重変化',
             'n_horses',
-            'rank'
+            'rank',
+            'win'
             ]]
         return df

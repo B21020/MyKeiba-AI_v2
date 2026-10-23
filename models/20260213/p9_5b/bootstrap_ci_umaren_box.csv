@@ -1,0 +1,2 @@
+bet_type,calibration,threshold,anchor_threshold,partner_threshold,point_rr,n_bets,n_races,n_hits,ci_lower,ci_upper,p_rr_lt_1,boot_mean
+umaren_box,none,1.8181818181818183,,,0.725,12,526,1,0.0,2.9,0.7305,0.7218119354256853

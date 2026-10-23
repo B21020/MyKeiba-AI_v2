@@ -19,6 +19,10 @@ output/**/*.png
 
 # 生成物（ローカル実行の出力）
 data/**/*.pickle.bak_*
+data/**/*.parquet
+# Resumable data collection: downloaded HTML/JSON, raw snapshots and checkpoints
+data/updates/
+data/odds/
 images/output_*.png
 
 # Byte-compiled / optimized / DLL files

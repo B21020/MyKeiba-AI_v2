@@ -103,6 +103,26 @@ class Simulator:
                         n_bets, bet_amount, return_amount = self.betting_tickets.bet_wide_box(
                             race_id, actions[race_id][action], 1
                             )
+                    elif action == 'wide_nagashi':
+                        payload = actions[race_id][action]
+                        anchor = None
+                        partners = []
+                        if isinstance(payload, dict):
+                            anchor = payload.get('anchor')
+                            partners = payload.get('partners', [])
+                        elif isinstance(payload, (tuple, list)) and len(payload) == 2 and isinstance(payload[1], (list, tuple, set)):
+                            anchor, partners = payload[0], list(payload[1])
+                        elif isinstance(payload, (list, tuple)):
+                            if len(payload) >= 2:
+                                anchor = payload[0]
+                                partners = list(payload[1:])
+                            else:
+                                anchor = payload
+                        else:
+                            anchor = payload
+                        n_bets, bet_amount, return_amount = self.betting_tickets.bet_wide_nagashi(
+                            race_id, anchor, partners, 1
+                        )
                     elif action == 'sanrenpuku':
                         n_bets, bet_amount, return_amount = self.betting_tickets.bet_sanrenpuku_box(
                             race_id, actions[race_id][action], 1

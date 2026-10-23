@@ -1,0 +1,2 @@
+threshold,calibration,point_rr,n_bets,n_races,n_hits,ci_lower,ci_upper,p_rr_lt_1,boot_mean
+2.3316582914572863,isotonic,0.9956521739130434,46,46,15,0.49766304347826085,1.6110326086956515,0.5255,0.9947554347826087

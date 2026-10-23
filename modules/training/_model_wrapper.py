@@ -68,6 +68,14 @@ class ModelWrapper:
         y_train = datasets.y_train.values
 
         fit_kwargs = {}
+
+        # sample_weight（任意）
+        try:
+            w_train = getattr(datasets, 'sample_weight_train', None)
+        except Exception:
+            w_train = None
+        if w_train is not None:
+            fit_kwargs['sample_weight'] = w_train
         # early stopping（可能な場合のみ）
         try:
             X_valid = getattr(datasets, 'X_valid', None)
@@ -80,6 +88,12 @@ class ModelWrapper:
                         'callbacks': [lgb.early_stopping(stopping_rounds=50, verbose=False)],
                     }
                 )
+                try:
+                    w_valid = getattr(datasets, 'sample_weight_valid', None)
+                    if w_valid is not None:
+                        fit_kwargs['eval_sample_weight'] = [w_valid]
+                except Exception:
+                    pass
         except Exception:
             fit_kwargs = {}
 
