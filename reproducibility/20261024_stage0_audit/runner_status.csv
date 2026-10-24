@@ -1,0 +1,11 @@
+status,着順,rows,treatment
+demoted,2(降),3,use position after demotion
+demoted,3(降),4,use position after demotion
+demoted,4(降),1,use position after demotion
+not_finished,中,1309,"keep, non-placing"
+not_finished,中止,1269,"keep, non-placing"
+not_finished,失,1,"keep, non-placing"
+withdrawn,取,441,remove runner (did not start)
+withdrawn,取消,446,remove runner (did not start)
+withdrawn,除,570,remove runner (did not start)
+withdrawn,除外,600,remove runner (did not start)

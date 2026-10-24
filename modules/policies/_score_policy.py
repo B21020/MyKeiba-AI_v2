@@ -30,6 +30,13 @@ def _calc(model, X: pd.DataFrame) -> pd.DataFrame:
     if uma is not None:
         score_table[ResultsCols.UMABAN] = uma
 
+    # 学習時の特徴量定義を持つモデルは、その定義と厳密に照合する（欠けた列はゼロ埋めせずに止める）
+    schema = getattr(model, 'mykeiba_feature_schema_', None)
+    if schema is not None:
+        from modules.training._feature_schema import align_to_schema
+        score_table[_SCORE] = model.predict_proba(align_to_schema(X, schema))[:, 1]
+        return score_table
+
     # 特徴量として使う列を決定（メタ列を除外）
     meta_cols = []
     if ResultsCols.UMABAN in X.columns:

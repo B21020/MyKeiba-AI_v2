@@ -1,0 +1,135 @@
+{
+  "tag": "20261024_stage1",
+  "started_at": "2026-10-24T10:33:12",
+  "git_head": "eee8b683e65927c0be81932850ebdabb3251c1a3",
+  "inputs": {
+    "results": {
+      "path": "data\\raw\\results.pickle",
+      "sha256": "78ca4b0008c791e358e84a59b261f35fab3bb9cc60db40256a7cd7f5b809352c"
+    },
+    "race_info": {
+      "path": "data\\raw\\race_info.pickle",
+      "sha256": "ff17cfdb051a58c36a6b11a711e7929d879187ad0f6580c02f1a58ecbd0d3846"
+    },
+    "horse_info": {
+      "path": "data\\raw\\horse_info.pickle",
+      "sha256": "26ec522e38ddd9720d52892e3abb7ae4f6d98ad6211ea390c7755f3041219522"
+    },
+    "peds": {
+      "path": "data\\raw\\peds.pickle",
+      "sha256": "7e201fdcf2ca7e293c592805fce0aa14ac30a8124ac5d79c5ce41204bc6c888c"
+    },
+    "horse_results": {
+      "path": "data\\interim\\horse_results_merged.pickle",
+      "sha256": "b525aac1d979a8b7bc454b2f9388910c4d2ede82b2abcde4e9f85e51e1c6a45a"
+    },
+    "race_inclusion": {
+      "path": "reproducibility\\20261024_stage0_audit\\race_inclusion.csv",
+      "sha256": "e26539bfc8becab3a7939d27e59345c9443d87b741b6b5a3f824d4c1d7f33a19"
+    }
+  },
+  "races_include_train": 39322,
+  "result_rows_after_preprocess": 550493,
+  "checks": {
+    "rows": 550493,
+    "races": 39322,
+    "date_min": "2015-01-04",
+    "date_max": "2026-10-18",
+    "duplicate_race_umaban": 0,
+    "missing_pct_by_year": {
+      "2015": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.03
+      },
+      "2016": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.04
+      },
+      "2017": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.04
+      },
+      "2018": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.04
+      },
+      "2019": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.03
+      },
+      "2020": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.0
+      },
+      "2021": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.0
+      },
+      "2022": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.0
+      },
+      "2023": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.0
+      },
+      "2024": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.0
+      },
+      "2025": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.01
+      },
+      "2026": {
+        "単勝": 0.0,
+        "枠番": 0.0,
+        "体重": 0.0,
+        "体重変化": 0.06
+      }
+    },
+    "missing_ok": true,
+    "p11_positive_perm_missing": [],
+    "labels": {
+      "rank": {
+        "0": 432428,
+        "1": 118065
+      },
+      "win": {
+        "0": 511111,
+        "1": 39382
+      }
+    }
+  },
+  "problems": [],
+  "outputs": {
+    "featured": "data\\tmp\\featured_data_20261024_stage1.pickle",
+    "sha256": "8089665aa13b00f1a20daa7846e15e8506f076e181eab7ca9ec57ab60381eb13",
+    "columns": 342,
+    "feature_columns": 336,
+    "schema_fingerprint": "f50b4a8cddb0b8aa"
+  },
+  "finished_at": "2026-10-24T10:38:32"
+}

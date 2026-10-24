@@ -9,6 +9,7 @@ except ModuleNotFoundError:
     lgb_o = None
 
 from ._data_splitter import DataSplitter
+from ._feature_schema import align_to_schema, build_schema
 
 
 class ModelWrapper:
@@ -120,14 +121,16 @@ class ModelWrapper:
             self.__lgb_model.feature_name_ = list(datasets.X_train.columns)
         except Exception:
             pass
+        # 学習時の特徴量定義（列名・順序・型・カテゴリ）を保持する。予測時はこれと照合し、欠けた列があれば止める
+        schema = build_schema(datasets.X_train)
+        setattr(self.__lgb_model, 'mykeiba_feature_schema_', schema)
         # AUCを計算して出力
-        # 予測時も列名順に整列（念のため）
         auc_train = roc_auc_score(
-            datasets.y_train, self.__lgb_model.predict_proba(datasets.X_train.reindex(columns=datasets.X_train.columns))[:, 1]
+            datasets.y_train, self.__lgb_model.predict_proba(datasets.X_train)[:, 1]
             )
         auc_test = roc_auc_score(
             datasets.y_test,
-            self.__lgb_model.predict_proba(datasets.X_test.reindex(columns=datasets.X_train.columns, fill_value=0))[:, 1]
+            self.__lgb_model.predict_proba(align_to_schema(datasets.X_test, schema))[:, 1]
             )
         # 特徴量の重要度を記憶しておく
         self.__feature_importance = pd.DataFrame({

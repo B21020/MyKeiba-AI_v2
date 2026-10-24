@@ -12,15 +12,49 @@ except ModuleNotFoundError:
 from modules.constants import ResultsCols
 
 
+SPLIT_DATE_KEYS = ('train_start', 'valid_start', 'test_start', 'test_end')
+
+
+def split_race_ids_by_dates(date_per_race: pd.Series, split_dates: dict) -> tuple[pd.Index, pd.Index, pd.Index]:
+    """race_id -> 日付 から、日付の境界で学習・検証・テストの race_id を作る。
+
+    - 学習: train_start <= date < valid_start
+    - 検証（early stopping 用）: valid_start <= date < test_start
+    - テスト: test_start <= date <= test_end
+    同じレースの出走馬は必ず同じ区分に入る。
+    """
+    missing = [k for k in SPLIT_DATE_KEYS if k not in split_dates]
+    if missing:
+        raise ValueError(f'split_dates is missing keys: {missing}')
+    b = {k: pd.Timestamp(split_dates[k]) for k in SPLIT_DATE_KEYS}
+    if not (b['train_start'] < b['valid_start'] < b['test_start'] <= b['test_end']):
+        raise ValueError(f'split_dates must satisfy train_start < valid_start < test_start <= test_end: {split_dates}')
+    d = pd.to_datetime(date_per_race)
+    train = d[(d >= b['train_start']) & (d < b['valid_start'])].sort_values().index
+    valid = d[(d >= b['valid_start']) & (d < b['test_start'])].sort_values().index
+    test = d[(d >= b['test_start']) & (d <= b['test_end'])].sort_values().index
+    if len(train) == 0 or len(valid) == 0 or len(test) == 0:
+        raise ValueError(f'empty split: train={len(train)} valid={len(valid)} test={len(test)}')
+    return train, valid, test
+
+
 class DataSplitter:
     def __init__(
         self,
         featured_data,
-        test_size,
-        valid_size,
+        test_size=None,
+        valid_size=None,
         use_race_normalized_weight: bool = False,
         time_decay_half_life_days: float | None = None,
+        split_dates: dict | None = None,
     ) -> None:
+        """
+        split_dates を渡すと、比率の代わりに日付の境界で分割する（SPLIT_DATE_KEYS を参照）。
+        どちらの場合も、学習（X_train）と early stopping 用の検証（X_valid）は重ならない。
+        """
+        if split_dates is None and (test_size is None or valid_size is None):
+            raise ValueError('Either split_dates or both test_size and valid_size must be given')
+        self.__split_dates = dict(split_dates) if split_dates is not None else None
         self.__featured_data = featured_data
         self.__use_race_normalized_weight = bool(use_race_normalized_weight)
         self.__time_decay_half_life_days = time_decay_half_life_days
@@ -58,23 +92,28 @@ class DataSplitter:
         date_per_race = date_series.groupby(race_keys).first()
 
         # id分割（巨大DataFrameの実体コピーを作らない）
-        train_id_list, test_id_list = self.__split_id_by_date(date_per_race, test_size=test_size)
+        if getattr(self, '_DataSplitter__split_dates', None) is not None:
+            train_optuna_ids, valid_optuna_ids, test_id_list = split_race_ids_by_dates(date_per_race, self.__split_dates)
+            train_id_list = train_optuna_ids.append(valid_optuna_ids)
+        else:
+            train_id_list, test_id_list = self.__split_id_by_date(date_per_race, test_size=test_size)
+            # train/valid（optuna用）も id で分割（必要時にDatasetへ変換）
+            train_optuna_ids, valid_optuna_ids = self.__split_id_by_date(date_per_race.loc[train_id_list], test_size=valid_size)
+        # train_id_list = 学習＋検証（train_data 互換）。モデルの fit には train_optuna_ids だけを使う
         self.__train_id_list = train_id_list
         self.__test_id_list = test_id_list
-
-        # train/valid（optuna用）も id で分割（必要時にDatasetへ変換）
-        train_optuna_ids, valid_optuna_ids = self.__split_id_by_date(date_per_race.loc[train_id_list], test_size=valid_size)
         self.__train_optuna_id_list = train_optuna_ids
         self.__valid_optuna_id_list = valid_optuna_ids
 
-        # 時系列重み付け用の基準日（学習期間内の最大日付）
+        # 時系列重み付け用の基準日（fit に使う期間内の最大日付）
         try:
-            self.__time_decay_ref_date = pd.to_datetime(date_per_race.loc[train_id_list]).max()
+            self.__time_decay_ref_date = pd.to_datetime(date_per_race.loc[train_optuna_ids]).max()
         except Exception:
             self.__time_decay_ref_date = None
 
         # 学習に必要な最小限だけ先に作る（test側は後段で必要なら作る）
-        df_train = self.__select_by_race_ids(df, train_id_list)
+        # NOTE: X_train は early stopping 用の検証期間を含まない（検証で止める反復数が楽観にならないように）
+        df_train = self.__select_by_race_ids(df, train_optuna_ids)
         self.__X_train = df_train.loc[:, self.__feature_cols]
         self.__y_train = df_train.loc[:, 'rank']
 
@@ -225,6 +264,20 @@ class DataSplitter:
         return self.__featured_data
 
     @property
+    def fit_race_ids(self) -> pd.Index:
+        """モデルの fit に使う race_id（検証期間を含まない）。"""
+        return pd.Index(self.__train_optuna_id_list)
+
+    @property
+    def valid_race_ids(self) -> pd.Index:
+        """early stopping 用の検証 race_id。"""
+        return pd.Index(self.__valid_optuna_id_list)
+
+    @property
+    def test_race_ids(self) -> pd.Index:
+        return pd.Index(self.__test_id_list)
+
+    @property
     def train_data(self):
         return self.__select_by_race_ids(self.__featured_data, self.__train_id_list)
 
@@ -280,7 +333,8 @@ class DataSplitter:
         if not self.__use_race_normalized_weight and self.__time_decay_half_life_days is None:
             return None
         if self.__sample_weight_train is None:
-            df = self.__select_by_race_ids(self.__featured_data, self.__train_id_list)
+            # X_train と同じ行（検証期間を含まない）
+            df = self.__select_by_race_ids(self.__featured_data, self.__train_optuna_id_list)
             self.__sample_weight_train = self.__compute_sample_weight(df, apply_time_decay=True)
         return self.__sample_weight_train
 

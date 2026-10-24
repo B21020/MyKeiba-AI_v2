@@ -26,6 +26,7 @@ from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from modules.preparing._horse_history_columns import realign_public_horse_history  # noqa: E402
 from modules.preparing._get_rawdata import (  # noqa: E402
     get_rawdata_info, get_rawdata_results, get_rawdata_return,
 )
@@ -350,6 +351,8 @@ def parse_horse(data: bytes, horse_id: str, end: str):
     df.columns = [unicodedata.normalize("NFKC", str(c)).replace(" ", "") for c in df.columns]
     if "日付" not in df or "着順" not in df:
         raise ValueError("Horse history schema changed")
+    # 公開版は伏せ字の有料列のため「通過」以降が4列右にずれる。旧 raw と同じ列名・列順に戻す
+    df = realign_public_horse_history(df)
     dates = pd.to_datetime(df["日付"], errors="coerce")
     if dates.isna().any():
         raise ValueError("Unparsed date in horse history")

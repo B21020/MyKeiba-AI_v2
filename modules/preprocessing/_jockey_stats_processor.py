@@ -32,8 +32,8 @@ class JockeyStatsProcessor(AbstractDataProcessor):
         shift(1) + rolling(window) でリークを防いでいる。
     """
 
-    def __init__(self, filepath: str):
-        super().__init__(filepath)
+    def __init__(self, filepath: str | None = None, raw_data: pd.DataFrame | None = None):
+        super().__init__(filepath, raw_data=raw_data)
 
     def _preprocess(self) -> pd.DataFrame:
         """騎手ごとの直近複勝率特徴量を計算して返す。"""
