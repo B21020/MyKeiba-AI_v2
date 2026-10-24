@@ -1,0 +1,34 @@
+{
+  "pipeline": "feb",
+  "worktree": "C:\\Users\\koxyg\\AppData\\Local\\Temp\\claude\\C--Users-koxyg-Documents-GitHub-MyKeiba-AI-v2\\aa868e26-88b5-44f8-a27a-1b153502338a\\scratchpad\\pipeline_compare\\feb",
+  "feature_shape": [
+    555517,
+    282
+  ],
+  "folds": [
+    {
+      "cutoff": "2025-11-01",
+      "train_rows": 522986,
+      "train_max_date": "2025-10-26",
+      "pred_rows": 16223,
+      "n_features": 101,
+      "features_missing_from_p11": 45
+    },
+    {
+      "cutoff": "2026-01-01",
+      "train_rows": 531216,
+      "train_max_date": "2025-12-28",
+      "pred_rows": 15961,
+      "n_features": 101,
+      "features_missing_from_p11": 45
+    },
+    {
+      "cutoff": "2026-03-01",
+      "train_rows": 539209,
+      "train_max_date": "2026-02-28",
+      "pred_rows": 16308,
+      "n_features": 101,
+      "features_missing_from_p11": 45
+    }
+  ]
+}
