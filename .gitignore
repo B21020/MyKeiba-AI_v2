@@ -23,6 +23,8 @@ data/**/*.parquet
 # Resumable data collection: downloaded HTML/JSON, raw snapshots and checkpoints
 data/updates/
 data/odds/
+# JRA-VAN training data (private use only; never commit)
+data/jv_training*/
 images/output_*.png
 
 # Byte-compiled / optimized / DLL files
