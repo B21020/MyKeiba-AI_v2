@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 
 from ._data_merger import DataMerger
 from modules.constants import LocalPaths, HorseResultsCols, Master
@@ -12,10 +13,66 @@ class FeatureEngineering:
     """
     def __init__(self, data_merger: DataMerger):
         self.__data = data_merger.merged_data.copy()
+        self.__dtypes_optimized = False
         
     @property
     def featured_data(self):
+        # NOTE: Notebook側でFeatureEngineeringインスタンスが既に作られていても、
+        # 学習直前のアクセスでdtype最適化が効くよう遅延実行する。
+        if not self.__dtypes_optimized:
+            self.optimize_dtypes()
         return self.__data
+
+    def optimize_dtypes(self):
+        """学習用データのdtypeを軽量化してメモリを削減する。
+
+        - float64 -> float32
+        - int64/uint64 -> 可能なら int32/uint32 以下へ downcast
+        - category/object/datetime は維持
+        """
+
+        df = self.__data
+
+        # 1) float64 -> float32（最も効果が大きい）
+        float64_cols = df.select_dtypes(include=['float64']).columns
+        if len(float64_cols) > 0:
+            df[float64_cols] = df[float64_cols].astype('float32')
+
+        # 2) pandas nullable float (Float64) -> float32
+        nullable_float_cols = [c for c in df.columns if str(df[c].dtype) == 'Float64']
+        for c in nullable_float_cols:
+            # pd.NA は np.nan になり、通常のfloat32列として扱える
+            df[c] = df[c].astype('float32')
+
+        # 3) int64/uint64 を可能な範囲でdowncast
+        int64_cols = df.select_dtypes(include=['int64']).columns
+        for c in int64_cols:
+            df[c] = pd.to_numeric(df[c], downcast='integer')
+
+        uint64_cols = df.select_dtypes(include=['uint64']).columns
+        for c in uint64_cols:
+            df[c] = pd.to_numeric(df[c], downcast='unsigned')
+
+        # 4) pandas nullable integers (Int64/UInt64) は範囲チェックして縮小
+        for c in df.columns:
+            dtype_str = str(df[c].dtype)
+            if dtype_str == 'Int64':
+                s = df[c]
+                if s.notna().any():
+                    vmin = int(s.min(skipna=True))
+                    vmax = int(s.max(skipna=True))
+                    if np.iinfo(np.int32).min <= vmin and vmax <= np.iinfo(np.int32).max:
+                        df[c] = s.astype('Int32')
+            elif dtype_str == 'UInt64':
+                s = df[c]
+                if s.notna().any():
+                    vmax = int(s.max(skipna=True))
+                    if vmax <= np.iinfo(np.uint32).max:
+                        df[c] = s.astype('UInt32')
+
+        self.__data = df
+        self.__dtypes_optimized = True
+        return self
     
     def add_interval(self):
         """
@@ -183,4 +240,52 @@ class FeatureEngineering:
         """
         self.__data['race_class'] = pd.Categorical(self.__data['race_class'], Master.RACE_CLASS_LIST)
         self.__data = pd.get_dummies(self.__data, columns=['race_class'])
+        return self
+
+    def add_race_relative_features(self, target_cols=None):
+        """レース内での相対的な位置を表す特徴量を追加する。
+
+        各指定カラムに対して:
+        - ``{col}_zR``: レース内 z-score (平均0, 標準偏差1)
+        - ``{col}_rnkR``: レース内順位 (1=最小)
+
+        をfloat32で追加する。存在しないカラムは自動スキップ。
+        ``race_id`` 列が必要。
+        """
+        if target_cols is None:
+            target_cols = [
+                # 過去成績（5R / 9R / allR）
+                '着順_5R', '賞金_5R', '着差_5R', 'time_seconds_5R',
+                '着順_9R', '賞金_9R', '着差_9R', 'time_seconds_9R',
+                '着順_allR', '賞金_allR', '着差_allR', 'time_seconds_allR',
+                # コーナー通過順位
+                'first_corner_5R', 'final_corner_5R',
+                'first_corner_allR', 'final_corner_allR',
+                # 位置取り変動
+                'first_to_rank_5R', 'first_to_final_5R', 'final_to_rank_5R',
+                'first_to_rank_allR', 'first_to_final_allR', 'final_to_rank_allR',
+                # 馬属性
+                '斤量', '年齢', '体重', '体重変化',
+                # 騎手統計
+                'jockey_plc_rate_10_all', 'jockey_plc_rate_50_all',
+                # 時系列
+                'interval', 'age_days',
+            ]
+
+        target_cols = [c for c in target_cols if c in self.__data.columns]
+        if not target_cols:
+            return self
+
+        eps = 1e-6
+        for col in target_cols:
+            grouped = self.__data.groupby('race_id')[col]
+            race_mean = grouped.transform('mean')
+            race_std = grouped.transform('std').fillna(0).clip(lower=eps)
+            self.__data[f'{col}_zR'] = (
+                (self.__data[col] - race_mean) / race_std
+            ).astype('float32')
+            self.__data[f'{col}_rnkR'] = grouped.rank(
+                method='min', ascending=True
+            ).astype('float32')
+
         return self

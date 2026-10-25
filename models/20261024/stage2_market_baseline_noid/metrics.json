@@ -1,0 +1,1533 @@
+{
+  "overall_outer": {
+    "market_raw": {
+      "pseudo_r2": 0.26350992704058707,
+      "log_loss": 1.9190123964594406,
+      "auc": 0.8411888365548239,
+      "brier": 0.0570233901792557,
+      "top1": 0.33405600722673895
+    },
+    "market": {
+      "pseudo_r2": 0.2635017343598699,
+      "log_loss": 1.9190337434625215,
+      "auc": 0.8411441711509061,
+      "brier": 0.05703391371125723,
+      "top1": 0.33405600722673895
+    },
+    "model": {
+      "pseudo_r2": 0.17093703426040097,
+      "log_loss": 2.160222068312109,
+      "auc": 0.7842647120787557,
+      "brier": 0.06093116132854691,
+      "top1": 0.2622402890695574
+    },
+    "combined": {
+      "pseudo_r2": 0.2629118552152545,
+      "log_loss": 1.920570743664549,
+      "auc": 0.8408602503793875,
+      "brier": 0.057071523939386685,
+      "top1": 0.3345076784101174
+    },
+    "delta_r2_combined_vs_market": -0.0005898791446153906
+  },
+  "per_fold_delta_r2_outer": {
+    "outer_202301": -0.0039002269316735783,
+    "outer_202307": 0.0002043058864226177,
+    "outer_202401": -5.275966299211898e-05,
+    "outer_202407": 0.00021671223142483154,
+    "outer_202501": 0.0003459297645411752,
+    "outer_202507": -0.0006702011307517797,
+    "outer_202601": -0.0001934168080699461
+  },
+  "folds_with_positive_delta_r2": 3,
+  "bets": {
+    "ev_market": {
+      "bets": 0,
+      "roi": null,
+      "note": "betsel で購入数の下限を満たす条件が無く、どの fold でも買わなかった"
+    },
+    "ev_model": {
+      "roi": 0.6416551200531461,
+      "roi_ci95": [
+        0.5785878878079508,
+        0.7063952526812901
+      ],
+      "bets": 52685,
+      "races": 10689,
+      "days": 376,
+      "hit_rate": 0.02097371168264212,
+      "roi_without_top_hit": 0.6347859922178989,
+      "max_drawdown_yen": 1892750.0
+    },
+    "ev_combined": {
+      "roi": 0.5251798561151079,
+      "roi_ci95": [
+        0.08282713440405748,
+        1.067671809920484
+      ],
+      "bets": 139,
+      "races": 123,
+      "days": 50,
+      "hit_rate": 0.04316546762589928,
+      "roi_without_top_hit": 0.3553956834532374,
+      "max_drawdown_yen": 6400.0
+    },
+    "favorite": {
+      "roi": 0.7906052393857272,
+      "roi_ci95": [
+        0.7665933237394018,
+        0.813614134253656
+      ],
+      "bets": 11070,
+      "races": 11070,
+      "days": 376,
+      "hit_rate": 0.33405600722673895,
+      "roi_without_top_hit": 0.7900903342366757,
+      "max_drawdown_yen": 231760.0
+    }
+  },
+  "folds": {
+    "outer_202301": {
+      "fit_rows": 185378,
+      "select_rows": 23099,
+      "best_iteration": 188,
+      "coefs": {
+        "market": {
+          "log_q": 1.0580460294500478
+        },
+        "model": {
+          "log_pF": 1.1651541186384091
+        },
+        "combined": {
+          "log_pF": 0.2527140005198355,
+          "log_q": 0.9057429222789667
+        }
+      },
+      "margins": {
+        "market": null,
+        "model": 1.0,
+        "combined": 0.05
+      },
+      "margin_tables": {
+        "market": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ],
+        "model": [
+          {
+            "margin": 0.0,
+            "bets": 5798,
+            "roi": 0.7097964815453605
+          },
+          {
+            "margin": 0.05,
+            "bets": 5542,
+            "roi": 0.7081919884518224
+          },
+          {
+            "margin": 0.1,
+            "bets": 5279,
+            "roi": 0.7226368630422428
+          },
+          {
+            "margin": 0.2,
+            "bets": 4845,
+            "roi": 0.7252425180598555
+          },
+          {
+            "margin": 0.3,
+            "bets": 4439,
+            "roi": 0.7333633701284072
+          },
+          {
+            "margin": 0.5,
+            "bets": 3809,
+            "roi": 0.7465213966920452
+          },
+          {
+            "margin": 0.75,
+            "bets": 3160,
+            "roi": 0.6937658227848101
+          },
+          {
+            "margin": 1.0,
+            "bets": 2690,
+            "roi": 0.7885130111524163
+          }
+        ],
+        "combined": [
+          {
+            "margin": 0.0,
+            "bets": 384,
+            "roi": 0.6174479166666667
+          },
+          {
+            "margin": 0.05,
+            "bets": 171,
+            "roi": 0.8953216374269006
+          },
+          {
+            "margin": 0.1,
+            "bets": 72,
+            "roi": 0.0
+          },
+          {
+            "margin": 0.2,
+            "bets": 8,
+            "roi": 0.0
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ]
+      },
+      "metrics": {
+        "calib": {
+          "races": 762,
+          "runners": 10107,
+          "market_raw": {
+            "pseudo_r2": 0.25705023699603013,
+            "log_loss": 1.9003765770028602
+          },
+          "market": {
+            "pseudo_r2": 0.25757249766588064,
+            "log_loss": 1.8990406967139146
+          },
+          "model": {
+            "pseudo_r2": 0.19273990730697932,
+            "log_loss": 2.064874703641001
+          },
+          "combined": {
+            "pseudo_r2": 0.26066798683012604,
+            "log_loss": 1.8911228059021417
+          },
+          "delta_r2_combined_vs_market": 0.003095489164245402
+        },
+        "outer": {
+          "races": 1597,
+          "runners": 22597,
+          "market_raw": {
+            "pseudo_r2": 0.26400637417370676,
+            "log_loss": 1.9340062078923295,
+            "auc": 0.8407290358483606,
+            "brier": 0.05613678593522689,
+            "top1": 0.3318722604884158
+          },
+          "market": {
+            "pseudo_r2": 0.2641227015698746,
+            "log_loss": 1.9337005287418014,
+            "auc": 0.8407615482732625,
+            "brier": 0.056127382618355974,
+            "top1": 0.3318722604884158
+          },
+          "model": {
+            "pseudo_r2": 0.16715199558511307,
+            "log_loss": 2.188515164055632,
+            "auc": 0.7814040372981584,
+            "brier": 0.06031214760280602,
+            "top1": 0.26111458985597996
+          },
+          "combined": {
+            "pseudo_r2": 0.26022247463820103,
+            "log_loss": 1.9439493445376952,
+            "auc": 0.8387732093565932,
+            "brier": 0.056345037561427724,
+            "top1": 0.32999373825923606
+          },
+          "delta_r2_combined_vs_market": -0.0039002269316735783
+        }
+      }
+    },
+    "outer_202307": {
+      "fit_rows": 184550,
+      "select_rows": 22550,
+      "best_iteration": 202,
+      "coefs": {
+        "market": {
+          "log_q": 1.0405739841966903
+        },
+        "model": {
+          "log_pF": 1.1632281388646661
+        },
+        "combined": {
+          "log_pF": -0.06941933730949974,
+          "log_q": 1.079060634756376
+        }
+      },
+      "margins": {
+        "market": null,
+        "model": 0.2,
+        "combined": null
+      },
+      "margin_tables": {
+        "market": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ],
+        "model": [
+          {
+            "margin": 0.0,
+            "bets": 5812,
+            "roi": 0.6459910529938059
+          },
+          {
+            "margin": 0.05,
+            "bets": 5575,
+            "roi": 0.6530224215246637
+          },
+          {
+            "margin": 0.1,
+            "bets": 5326,
+            "roi": 0.6569658280135185
+          },
+          {
+            "margin": 0.2,
+            "bets": 4861,
+            "roi": 0.6602756634437359
+          },
+          {
+            "margin": 0.3,
+            "bets": 4485,
+            "roi": 0.6292753623188406
+          },
+          {
+            "margin": 0.5,
+            "bets": 3835,
+            "roi": 0.6407301173402868
+          },
+          {
+            "margin": 0.75,
+            "bets": 3217,
+            "roi": 0.6248057196145477
+          },
+          {
+            "margin": 1.0,
+            "bets": 2711,
+            "roi": 0.5924751014385835
+          }
+        ],
+        "combined": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ]
+      },
+      "metrics": {
+        "calib": {
+          "races": 804,
+          "runners": 11430,
+          "market_raw": {
+            "pseudo_r2": 0.260199371856213,
+            "log_loss": 1.9480346092520842
+          },
+          "market": {
+            "pseudo_r2": 0.2604593485099683,
+            "log_loss": 1.9473500416809757
+          },
+          "model": {
+            "pseudo_r2": 0.16442404632639707,
+            "log_loss": 2.200229108346513
+          },
+          "combined": {
+            "pseudo_r2": 0.26064352851366923,
+            "log_loss": 1.9468650609876748
+          },
+          "delta_r2_combined_vs_market": 0.0001841800037009067
+        },
+        "outer": {
+          "races": 1567,
+          "runners": 21276,
+          "market_raw": {
+            "pseudo_r2": 0.2548651185253542,
+            "log_loss": 1.924033879867332,
+            "auc": 0.836462916618342,
+            "brier": 0.0585505544042726,
+            "top1": 0.3299298021697511
+          },
+          "market": {
+            "pseudo_r2": 0.2549270325245556,
+            "log_loss": 1.9238740099765737,
+            "auc": 0.836460942645274,
+            "brier": 0.058565061146170085,
+            "top1": 0.3299298021697511
+          },
+          "model": {
+            "pseudo_r2": 0.15491576220033,
+            "log_loss": 2.1821159434256763,
+            "auc": 0.771099992285325,
+            "brier": 0.06277344142011933,
+            "top1": 0.24569240587109126
+          },
+          "combined": {
+            "pseudo_r2": 0.25513133841097824,
+            "log_loss": 1.9233464659612465,
+            "auc": 0.836621594928818,
+            "brier": 0.05854805389398492,
+            "top1": 0.3305679642629228
+          },
+          "delta_r2_combined_vs_market": 0.0002043058864226177
+        }
+      }
+    },
+    "outer_202401": {
+      "fit_rows": 184158,
+      "select_rows": 23488,
+      "best_iteration": 236,
+      "coefs": {
+        "market": {
+          "log_q": 0.999500027148735
+        },
+        "model": {
+          "log_pF": 1.0450092606509693
+        },
+        "combined": {
+          "log_pF": -0.02962655847533989,
+          "log_q": 1.0170323358832087
+        }
+      },
+      "margins": {
+        "market": null,
+        "model": 0.0,
+        "combined": null
+      },
+      "margin_tables": {
+        "market": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ],
+        "model": [
+          {
+            "margin": 0.0,
+            "bets": 5987,
+            "roi": 0.5113579422081176
+          },
+          {
+            "margin": 0.05,
+            "bets": 5767,
+            "roi": 0.5072654759840471
+          },
+          {
+            "margin": 0.1,
+            "bets": 5542,
+            "roi": 0.499314326957777
+          },
+          {
+            "margin": 0.2,
+            "bets": 5135,
+            "roi": 0.5013826679649465
+          },
+          {
+            "margin": 0.3,
+            "bets": 4756,
+            "roi": 0.493986543313709
+          },
+          {
+            "margin": 0.5,
+            "bets": 4118,
+            "roi": 0.4540067994171928
+          },
+          {
+            "margin": 0.75,
+            "bets": 3492,
+            "roi": 0.44163802978235966
+          },
+          {
+            "margin": 1.0,
+            "bets": 3023,
+            "roi": 0.4486602712537215
+          }
+        ],
+        "combined": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ]
+      },
+      "metrics": {
+        "calib": {
+          "races": 780,
+          "runners": 10474,
+          "market_raw": {
+            "pseudo_r2": 0.24023625025368,
+            "log_loss": 1.9516878222097793
+          },
+          "market": {
+            "pseudo_r2": 0.2402362917227402,
+            "log_loss": 1.9516877156836916
+          },
+          "model": {
+            "pseudo_r2": 0.15028390995863783,
+            "log_loss": 2.1827581874275483
+          },
+          "combined": {
+            "pseudo_r2": 0.24027767601426686,
+            "log_loss": 1.951581407350568
+          },
+          "delta_r2_combined_vs_market": 4.138429152666934e-05
+        },
+        "outer": {
+          "races": 1641,
+          "runners": 22812,
+          "market_raw": {
+            "pseudo_r2": 0.2775350677177526,
+            "log_loss": 1.8842317363353933,
+            "auc": 0.848674110763527,
+            "brier": 0.05648315575912792,
+            "top1": 0.33577087141986595
+          },
+          "market": {
+            "pseudo_r2": 0.2775263118936514,
+            "log_loss": 1.8842545720481207,
+            "auc": 0.8486749440922624,
+            "brier": 0.0564834796633338,
+            "top1": 0.33577087141986595
+          },
+          "model": {
+            "pseudo_r2": 0.1827073203709202,
+            "log_loss": 2.1315481707423323,
+            "auc": 0.7937491264416013,
+            "brier": 0.06051775638260473,
+            "top1": 0.2742230347349177
+          },
+          "combined": {
+            "pseudo_r2": 0.2774735522306593,
+            "log_loss": 1.884392172403468,
+            "auc": 0.848675231446999,
+            "brier": 0.056489803888090856,
+            "top1": 0.33150517976843386
+          },
+          "delta_r2_combined_vs_market": -5.275966299211898e-05
+        }
+      }
+    },
+    "outer_202407": {
+      "fit_rows": 184119,
+      "select_rows": 22551,
+      "best_iteration": 140,
+      "coefs": {
+        "market": {
+          "log_q": 1.0871398028833261
+        },
+        "model": {
+          "log_pF": 1.1583201328353079
+        },
+        "combined": {
+          "log_pF": -0.0456662903345539,
+          "log_q": 1.115000455884674
+        }
+      },
+      "margins": {
+        "market": null,
+        "model": 1.0,
+        "combined": null
+      },
+      "margin_tables": {
+        "market": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ],
+        "model": [
+          {
+            "margin": 0.0,
+            "bets": 5509,
+            "roi": 0.7000907605736069
+          },
+          {
+            "margin": 0.05,
+            "bets": 5239,
+            "roi": 0.6941210154609658
+          },
+          {
+            "margin": 0.1,
+            "bets": 5007,
+            "roi": 0.6601358098661874
+          },
+          {
+            "margin": 0.2,
+            "bets": 4549,
+            "roi": 0.6570015387997362
+          },
+          {
+            "margin": 0.3,
+            "bets": 4132,
+            "roi": 0.6540174249757986
+          },
+          {
+            "margin": 0.5,
+            "bets": 3467,
+            "roi": 0.725151427747332
+          },
+          {
+            "margin": 0.75,
+            "bets": 2803,
+            "roi": 0.7960399571887263
+          },
+          {
+            "margin": 1.0,
+            "bets": 2278,
+            "roi": 0.8215539947322212
+          }
+        ],
+        "combined": [
+          {
+            "margin": 0.0,
+            "bets": 1,
+            "roi": 1.1
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ]
+      },
+      "metrics": {
+        "calib": {
+          "races": 839,
+          "runners": 11667,
+          "market_raw": {
+            "pseudo_r2": 0.28971809104913826,
+            "log_loss": 1.853342981042404
+          },
+          "market": {
+            "pseudo_r2": 0.290913110140253,
+            "log_loss": 1.8502248103318468
+          },
+          "model": {
+            "pseudo_r2": 0.19213533527275395,
+            "log_loss": 2.1079662696406904
+          },
+          "combined": {
+            "pseudo_r2": 0.29100258214841646,
+            "log_loss": 1.8499913504671934
+          },
+          "delta_r2_combined_vs_market": 8.947200816344925e-05
+        },
+        "outer": {
+          "races": 1509,
+          "runners": 20494,
+          "market_raw": {
+            "pseudo_r2": 0.27025617231609045,
+            "log_loss": 1.8831592982252743,
+            "auc": 0.844404131419547,
+            "brier": 0.05758691818506835,
+            "top1": 0.35984095427435386
+          },
+          "market": {
+            "pseudo_r2": 0.27048635845775715,
+            "log_loss": 1.882565285427142,
+            "auc": 0.8444469437683159,
+            "brier": 0.05758115056522997,
+            "top1": 0.35984095427435386
+          },
+          "model": {
+            "pseudo_r2": 0.16934318033285412,
+            "log_loss": 2.1435729282632363,
+            "auc": 0.7835823916156408,
+            "brier": 0.06202346074874939,
+            "top1": 0.25646123260437376
+          },
+          "combined": {
+            "pseudo_r2": 0.270703070689182,
+            "log_loss": 1.8820060430763814,
+            "auc": 0.8445559269949046,
+            "brier": 0.057564771970810745,
+            "top1": 0.3605036447978794
+          },
+          "delta_r2_combined_vs_market": 0.00021671223142483154
+        }
+      }
+    },
+    "outer_202501": {
+      "fit_rows": 184420,
+      "select_rows": 24046,
+      "best_iteration": 197,
+      "coefs": {
+        "market": {
+          "log_q": 1.0192829005921495
+        },
+        "model": {
+          "log_pF": 1.0511398045901856
+        },
+        "combined": {
+          "log_pF": -0.046146072798703246,
+          "log_q": 1.0485453532463398
+        }
+      },
+      "margins": {
+        "market": null,
+        "model": 1.0,
+        "combined": null
+      },
+      "margin_tables": {
+        "market": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ],
+        "model": [
+          {
+            "margin": 0.0,
+            "bets": 5697,
+            "roi": 0.6571002281902756
+          },
+          {
+            "margin": 0.05,
+            "bets": 5462,
+            "roi": 0.6495789088246063
+          },
+          {
+            "margin": 0.1,
+            "bets": 5240,
+            "roi": 0.6320801526717558
+          },
+          {
+            "margin": 0.2,
+            "bets": 4855,
+            "roi": 0.627826982492276
+          },
+          {
+            "margin": 0.3,
+            "bets": 4487,
+            "roi": 0.6551816358368621
+          },
+          {
+            "margin": 0.5,
+            "bets": 3841,
+            "roi": 0.684977870346264
+          },
+          {
+            "margin": 0.75,
+            "bets": 3193,
+            "roi": 0.6475728155339806
+          },
+          {
+            "margin": 1.0,
+            "bets": 2711,
+            "roi": 0.7022869789745482
+          }
+        ],
+        "combined": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ]
+      },
+      "metrics": {
+        "calib": {
+          "races": 734,
+          "runners": 9806,
+          "market_raw": {
+            "pseudo_r2": 0.2615176687754448,
+            "log_loss": 1.8923272949476386
+          },
+          "market": {
+            "pseudo_r2": 0.26158067757240744,
+            "log_loss": 1.892165837778966
+          },
+          "model": {
+            "pseudo_r2": 0.17267430203940748,
+            "log_loss": 2.1199843704674657
+          },
+          "combined": {
+            "pseudo_r2": 0.26168260738119087,
+            "log_loss": 1.891904647292513
+          },
+          "delta_r2_combined_vs_market": 0.00010192980878342972
+        },
+        "outer": {
+          "races": 1588,
+          "runners": 22702,
+          "market_raw": {
+            "pseudo_r2": 0.2673854251804213,
+            "log_loss": 1.9329624656179398,
+            "auc": 0.8429309226342184,
+            "brier": 0.05540899728059101,
+            "top1": 0.33690176322418136
+          },
+          "market": {
+            "pseudo_r2": 0.26755217785185903,
+            "log_loss": 1.9325224980469833,
+            "auc": 0.8429446777100871,
+            "brier": 0.05539810451485306,
+            "top1": 0.33690176322418136
+          },
+          "model": {
+            "pseudo_r2": 0.1726729280098317,
+            "log_loss": 2.1828560772769503,
+            "auc": 0.7833068816078885,
+            "brier": 0.05916879538709848,
+            "top1": 0.2682619647355164
+          },
+          "combined": {
+            "pseudo_r2": 0.2678981076164002,
+            "log_loss": 1.9316097817653521,
+            "auc": 0.8431682274658437,
+            "brier": 0.0553896085173591,
+            "top1": 0.33816120906801006
+          },
+          "delta_r2_combined_vs_market": 0.0003459297645411752
+        }
+      }
+    },
+    "outer_202507": {
+      "fit_rows": 184393,
+      "select_rows": 21565,
+      "best_iteration": 214,
+      "coefs": {
+        "market": {
+          "log_q": 1.060873670037307
+        },
+        "model": {
+          "log_pF": 1.028556062193897
+        },
+        "combined": {
+          "log_pF": -0.09735836810987603,
+          "log_q": 1.12488628930419
+        }
+      },
+      "margins": {
+        "market": null,
+        "model": 0.0,
+        "combined": null
+      },
+      "margin_tables": {
+        "market": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ],
+        "model": [
+          {
+            "margin": 0.0,
+            "bets": 5504,
+            "roi": 0.6125181686046511
+          },
+          {
+            "margin": 0.05,
+            "bets": 5256,
+            "roi": 0.5481164383561644
+          },
+          {
+            "margin": 0.1,
+            "bets": 4986,
+            "roi": 0.5399919775371039
+          },
+          {
+            "margin": 0.2,
+            "bets": 4499,
+            "roi": 0.5182929539897755
+          },
+          {
+            "margin": 0.3,
+            "bets": 4102,
+            "roi": 0.4833008288639688
+          },
+          {
+            "margin": 0.5,
+            "bets": 3410,
+            "roi": 0.41255131964809383
+          },
+          {
+            "margin": 0.75,
+            "bets": 2742,
+            "roi": 0.3563092633114515
+          },
+          {
+            "margin": 1.0,
+            "bets": 2267,
+            "roi": 0.2364358182620203
+          }
+        ],
+        "combined": [
+          {
+            "margin": 0.0,
+            "bets": 1,
+            "roi": 0.0
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ]
+      },
+      "metrics": {
+        "calib": {
+          "races": 796,
+          "runners": 11598,
+          "market_raw": {
+            "pseudo_r2": 0.27302869728059864,
+            "log_loss": 1.9341584265067455
+          },
+          "market": {
+            "pseudo_r2": 0.27361858483095325,
+            "log_loss": 1.9325889890723629
+          },
+          "model": {
+            "pseudo_r2": 0.17476067016620533,
+            "log_loss": 2.1956074438042816
+          },
+          "combined": {
+            "pseudo_r2": 0.27409049757165016,
+            "log_loss": 1.931333431940217
+          },
+          "delta_r2_combined_vs_market": 0.00047191274069691147
+        },
+        "outer": {
+          "races": 1588,
+          "runners": 21477,
+          "market_raw": {
+            "pseudo_r2": 0.2523643026103837,
+            "log_loss": 1.9236306391241558,
+            "auc": 0.8360337479083868,
+            "brier": 0.058931695886875704,
+            "top1": 0.3211586901763224
+          },
+          "market": {
+            "pseudo_r2": 0.2519033640745316,
+            "log_loss": 1.9248166117755605,
+            "auc": 0.8360073724720772,
+            "brier": 0.059000639125301284,
+            "top1": 0.3211586901763224
+          },
+          "model": {
+            "pseudo_r2": 0.17275656198143974,
+            "log_loss": 2.128457521414504,
+            "auc": 0.7864298063935449,
+            "brier": 0.062118461766331366,
+            "top1": 0.2739294710327456
+          },
+          "combined": {
+            "pseudo_r2": 0.25123316294377984,
+            "log_loss": 1.9265410070044013,
+            "auc": 0.8356697415871371,
+            "brier": 0.059038061735969406,
+            "top1": 0.3261964735516373
+          },
+          "delta_r2_combined_vs_market": -0.0006702011307517797
+        }
+      }
+    },
+    "outer_202601": {
+      "fit_rows": 183467,
+      "select_rows": 23773,
+      "best_iteration": 221,
+      "coefs": {
+        "market": {
+          "log_q": 1.038493456876463
+        },
+        "model": {
+          "log_pF": 1.020269384931143
+        },
+        "combined": {
+          "log_pF": 0.0458571117556373,
+          "log_q": 1.0063304368468338
+        }
+      },
+      "margins": {
+        "market": null,
+        "model": 0.75,
+        "combined": null
+      },
+      "margin_tables": {
+        "market": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ],
+        "model": [
+          {
+            "margin": 0.0,
+            "bets": 5550,
+            "roi": 0.7812792792792793
+          },
+          {
+            "margin": 0.05,
+            "bets": 5287,
+            "roi": 0.7916587857007755
+          },
+          {
+            "margin": 0.1,
+            "bets": 5034,
+            "roi": 0.8171235597934049
+          },
+          {
+            "margin": 0.2,
+            "bets": 4596,
+            "roi": 0.8325718015665796
+          },
+          {
+            "margin": 0.3,
+            "bets": 4199,
+            "roi": 0.850130983567516
+          },
+          {
+            "margin": 0.5,
+            "bets": 3564,
+            "roi": 0.8749158249158249
+          },
+          {
+            "margin": 0.75,
+            "bets": 2892,
+            "roi": 0.876417704011065
+          },
+          {
+            "margin": 1.0,
+            "bets": 2364,
+            "roi": 0.7901015228426396
+          }
+        ],
+        "combined": [
+          {
+            "margin": 0.0,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.05,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.1,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.2,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.3,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.5,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 0.75,
+            "bets": 0,
+            "roi": NaN
+          },
+          {
+            "margin": 1.0,
+            "bets": 0,
+            "roi": NaN
+          }
+        ]
+      },
+      "metrics": {
+        "calib": {
+          "races": 811,
+          "runners": 10518,
+          "market_raw": {
+            "pseudo_r2": 0.25912240951258336,
+            "log_loss": 1.8717944514958658
+          },
+          "market": {
+            "pseudo_r2": 0.25936197306404984,
+            "log_loss": 1.8711892047828147
+          },
+          "model": {
+            "pseudo_r2": 0.18554838420193376,
+            "log_loss": 2.057675971086826
+          },
+          "combined": {
+            "pseudo_r2": 0.2594711560293539,
+            "log_loss": 1.8709133588518836
+          },
+          "delta_r2_combined_vs_market": 0.00010918296530404437
+        },
+        "outer": {
+          "races": 1580,
+          "runners": 22386,
+          "market_raw": {
+            "pseudo_r2": 0.2577056064812463,
+            "log_loss": 1.9505801989690386,
+            "auc": 0.8381801071088558,
+            "brier": 0.056307889446414586,
+            "top1": 0.3240506329113924
+          },
+          "market": {
+            "pseudo_r2": 0.2575492356327449,
+            "log_loss": 1.9509911058591431,
+            "auc": 0.8382252842993607,
+            "brier": 0.05632572101744591,
+            "top1": 0.3240506329113924
+          },
+          "model": {
+            "pseudo_r2": 0.17619574871113897,
+            "log_loss": 2.1647694963359156,
+            "auc": 0.7895567117389707,
+            "brier": 0.05987452286441489,
+            "top1": 0.25506329113924053
+          },
+          "combined": {
+            "pseudo_r2": 0.25735581882467495,
+            "log_loss": 1.951499361073332,
+            "auc": 0.8382187478956201,
+            "brier": 0.056361743079765755,
+            "top1": 0.3259493670886076
+          },
+          "delta_r2_combined_vs_market": -0.0001934168080699461
+        }
+      }
+    }
+  }
+}

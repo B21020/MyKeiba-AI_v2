@@ -1,0 +1,2 @@
+bet_type,calibration,threshold,anchor_threshold,partner_threshold,point_rr,n_bets,n_races,n_hits,ci_lower,ci_upper,p_rr_lt_1,boot_mean
+umaren_nagashi,isotonic,2.5,2.5,2.0,1.4567999999999999,125,125,16,0.31746,3.47126,0.3635,1.4515867999999998

@@ -1,0 +1,81 @@
+recorded_at: 2026-10-23T06:40:45
+branch: 20260208
+head: 691e0bba2cef4f43317f4e91619b787dc27542f8
+head_log: 691e0bb 2026-02-08 12:01:49 +0900 Fix bet policy syntax
+
+## git status --short
+ M main.ipynb
+ M modules/policies/_bet_policy.py
+ M modules/preparing/_get_rawdata.py
+ M modules/preprocessing/_feature_engineering.py
+ M modules/preprocessing/_results_processor.py
+ M modules/simulation/_betting_tickets.py
+ M modules/simulation/_simulator.py
+ M modules/training/_data_splitter.py
+ M modules/training/_keiba_ai_factory.py
+ M modules/training/_model_wrapper.py
+ M modules/training/_win_data_splitter.py
+ M tools/run_ev_tansho_sweep.py
+?? images/calibration_grouped_bar.png
+?? images/calibration_heatmap.png
+?? images/calibration_sweep_curves.png
+?? images/optuna_comparison_bar.png
+?? images/optuna_feature_importance_top20.png
+?? images/optuna_hp_importance.png
+?? images/optuna_trial_history.png
+?? images/window_auc_comparison.png
+?? images/window_fukusho_sweep.png
+?? images/window_reliability_scatter.png
+?? images/window_tansho_sweep.png
+?? models/20260208/
+?? models/20260209/
+?? models/20260210/
+?? models/20260212/
+?? models/20260213/
+?? models/20260220/
+?? modules/training/_calibration.py
+?? prompts/20260208_next_actions.md
+?? prompts/20260208_window_comparison_plan.md
+?? prompts/20260209_next_actions.md
+?? prompts/next_actions.md
+?? prompts/next_actions_20260220.md
+?? prompts/recovery_plan_20261022.md
+?? prompts/reports/20260208_calibration_sweep_report.md
+?? prompts/reports/20260208_optuna_hpo_report.md
+?? prompts/reports/20260208_p5_feature_elite_report.md
+?? prompts/reports/20260208_reports_2.md
+?? prompts/reports/20260209_p10_report.md
+?? prompts/reports/20260209_p6_report.md
+?? prompts/reports/20260209_p7_report.md
+?? prompts/reports/20260209_p8_1_report.md
+?? prompts/reports/20260209_p9_1_report.md
+?? prompts/reports/20260209_p9_2_report.md
+?? prompts/reports/20260210_p11_report.md
+?? prompts/reports/20260210_p12_report.md
+?? prompts/reports/20260220_p15_rank_pop_backtest_results.md
+?? prompts/reports/20260220_score_rank_x_popularity_analysis.md
+?? reproducibility/
+?? tools/compare_prediction_vs_actual.py
+?? tools/plot_calibration_sweep.py
+?? tools/plot_optuna_results.py
+?? tools/plot_window_comparison.py
+?? tools/record_repro_state.py
+?? tools/run_calibration_sweep.py
+?? tools/run_fukusho_sweep.py
+?? tools/run_optuna_tuning.py
+?? tools/run_p10_feature_engineering.py
+?? tools/run_p11_feature_selection.py
+?? tools/run_p13_ensemble.py
+?? tools/run_p14_test_periods.py
+?? tools/run_p15_rank_pop_backtest.py
+?? tools/run_p5_experiments.py
+?? tools/run_p6_experiments.py
+?? tools/run_p7_hpo.py
+?? tools/run_p8_bootstrap.py
+?? tools/run_p9_5_wide_sweep.py
+?? tools/run_p9_5b_multi_bet_sweep.py
+?? tools/run_p9_fukusho_hpo.py
+?? tools/run_window_comparison.py
+?? tools/summarize_fukusho_pickles.py
+?? tools/train_place_model.py
+?? tools/train_win_model.py

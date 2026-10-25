@@ -7,6 +7,15 @@ from bs4 import BeautifulSoup
 import re
 from modules.constants import Master
 
+
+def _find_result_table(soup):
+    """新旧どちらの summary 属性にも対応してレース結果テーブルを返す。"""
+    table = soup.find("table", attrs={"summary": "レース結果"})
+    if table is None:
+        table = soup.find("table", attrs={"summary": "全着順"})
+    return table
+
+
 def get_rawdata_results(html_path_list: list):
     """
     raceページのhtmlを受け取って、レース結果テーブルに変換する関数。
@@ -23,48 +32,56 @@ def get_rawdata_results(html_path_list: list):
                 # htmlをsoupオブジェクトに変換
                 soup = BeautifulSoup(html, "lxml")
 
-                # 馬IDをスクレイピング
+                # レース結果テーブルを取得（新旧 summary 属性に対応）
+                result_table = _find_result_table(soup)
+                if result_table is None:
+                    raise ValueError("レース結果テーブルが見つかりません")
+
+                # 馬IDをスクレイピング（相対/絶対パス両対応）
                 horse_id_list = []
-                horse_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/horse")}
+                horse_a_list = result_table.find_all(
+                    "a", attrs={"href": re.compile(r"/horse/(?!ped)")}
                 )
                 for a in horse_a_list:
                     horse_id = re.findall(r"\d+", a["href"])
                     horse_id_list.append(horse_id[0])
                 df["horse_id"] = horse_id_list
 
-                # 騎手IDをスクレイピング
+                # 騎手IDをスクレイピング（相対/絶対パス両対応）
                 jockey_id_list = []
-                jockey_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/jockey")}
+                jockey_a_list = result_table.find_all(
+                    "a", attrs={"href": re.compile(r"jockey")}
                 )
                 for a in jockey_a_list:
-                    #'jockey/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
-                    jockey_id = re.findall(r"jockey/result/recent/(\w*)", a["href"])
-                    jockey_id_list.append(jockey_id[0])
+                    jockey_id = re.findall(r"jockey/result/recent/(\w+)", a["href"])
+                    if jockey_id:
+                        jockey_id_list.append(jockey_id[0])
                 df["jockey_id"] = jockey_id_list
 
-                # 調教師IDをスクレイピング
+                # 調教師IDをスクレイピング（相対/絶対パス両対応）
                 trainer_id_list = []
-                trainer_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/trainer")}
+                trainer_a_list = result_table.find_all(
+                    "a", attrs={"href": re.compile(r"trainer")}
                 )
                 for a in trainer_a_list:
-                    #'trainer/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
-                    trainer_id = re.findall(r"trainer/result/recent/(\w*)", a["href"])
-                    trainer_id_list.append(trainer_id[0])
+                    trainer_id = re.findall(r"trainer/result/recent/(\w+)", a["href"])
+                    if trainer_id:
+                        trainer_id_list.append(trainer_id[0])
                 df["trainer_id"] = trainer_id_list
 
-                # 馬主IDをスクレイピング
+                # 馬主IDをスクレイピング（相対/絶対パス両対応、新HTMLでは欠損の場合あり）
                 owner_id_list = []
-                owner_a_list = soup.find("table", attrs={"summary": "レース結果"}).find_all(
-                    "a", attrs={"href": re.compile("^/owner")}
+                owner_a_list = result_table.find_all(
+                    "a", attrs={"href": re.compile(r"owner/result/recent/")}
                 )
                 for a in owner_a_list:
-                    #'owner/result/recent/'より後ろの英数字(及びアンダーバー)を抽出
-                    owner_id = re.findall(r"owner/result/recent/(\w*)", a["href"])
-                    owner_id_list.append(owner_id[0])
-                df["owner_id"] = owner_id_list
+                    owner_id = re.findall(r"owner/result/recent/(\w+)", a["href"])
+                    if owner_id:
+                        owner_id_list.append(owner_id[0])
+                if len(owner_id_list) == len(df):
+                    df["owner_id"] = owner_id_list
+                else:
+                    df["owner_id"] = NaN
 
                 # インデックスをrace_idにする
                 # use raw string for regex to avoid invalid escape sequence warning
@@ -89,9 +106,60 @@ def get_rawdata_results(html_path_list: list):
 
     return race_results_df
 
+def _extract_race_info_texts(soup):
+    """
+    レース情報テキストとグレードテキストを抽出するヘルパー。
+    旧HTML（data_intro）と新HTML（RaceList_Item02）の両方に対応。
+
+    Returns
+    -------
+    (texts: str, grade_text: str) or None
+    """
+    # --- 旧HTML: div.data_intro ---
+    data_intro = soup.find("div", attrs={"class": "data_intro"})
+    if data_intro:
+        ps = data_intro.find_all("p")
+        if len(ps) >= 2:
+            texts = ps[0].text + ps[1].text
+        elif len(ps) == 1:
+            texts = ps[0].text
+        else:
+            return None
+        h1s = data_intro.find_all("h1")
+        grade_text = h1s[0].text if h1s else ""
+        return texts, grade_text
+
+    # --- 新HTML: div.RaceList_Item02 ---
+    item02 = soup.find("div", class_="RaceList_Item02")
+    if item02 is None:
+        return None
+
+    d01 = item02.find("div", class_="RaceData01")
+    d02 = item02.find("div", class_="RaceData02")
+    texts = ""
+    if d01:
+        texts += d01.get_text()
+    if d02:
+        texts += d02.get_text()
+
+    # 新HTMLでは日付がRaceData内に無いため、og:titleメタタグから取得
+    og_title = soup.find("meta", attrs={"property": "og:title"})
+    if og_title:
+        date_match = re.search(r'\d{4}年\d{1,2}月\d{1,2}日', og_title.get("content", ""))
+        if date_match:
+            texts += " " + date_match.group(0)
+
+    # グレードテキストはh1.RaceNameから取得
+    race_name_h1 = item02.find("h1", class_="RaceName")
+    grade_text = race_name_h1.get_text() if race_name_h1 else ""
+
+    return texts, grade_text
+
+
 def get_rawdata_info(html_path_list: list):
     """
     raceページのhtmlを受け取って、レース情報テーブルに変換する関数。
+    旧HTML（data_intro）と新HTML（RaceList_Item02 / RaceData01 / RaceData02）の両方に対応。
     """
     print('preparing raw race_info table')
     race_infos = {}
@@ -105,10 +173,12 @@ def get_rawdata_info(html_path_list: list):
                 soup = BeautifulSoup(html, "lxml")
 
                 # 天候、レースの種類、コースの長さ、馬場の状態、日付、回り、レースクラスをスクレイピング
-                texts = (
-                    soup.find("div", attrs={"class": "data_intro"}).find_all("p")[0].text
-                    + soup.find("div", attrs={"class": "data_intro"}).find_all("p")[1].text
-                )
+                result = _extract_race_info_texts(soup)
+                if result is None:
+                    print('error at {}: no data_intro or RaceList_Item02'.format(html_path))
+                    continue
+                texts, grade_text = result
+
                 info = re.findall(r'\w+', texts)
                 df = pd.DataFrame()
                 # 障害レースフラグを初期化
@@ -116,6 +186,11 @@ def get_rawdata_info(html_path_list: list):
                 for text in info:
                     if text in ["芝", "ダート"]:
                         df["race_type"] = [text]
+                    # 新HTML対応: "芝1200m" や "ダ1400m" 形式の複合トークン
+                    if re.match(r'^芝\d', text):
+                        df["race_type"] = ["芝"]
+                    if re.match(r'^ダ\d', text):
+                        df["race_type"] = ["ダート"]
                     if "障" in text:
                         df["race_type"] = ["障害"]
                         hurdle_race_flg = True
@@ -148,7 +223,6 @@ def get_rawdata_info(html_path_list: list):
                         df["race_class"] = [Master.RACE_CLASS_LIST[5]]
 
                 # グレードレース情報の取得
-                grade_text = soup.find("div", attrs={"class": "data_intro"}).find_all("h1")[0].text
                 if "G3" in grade_text:
                     df["race_class"] = [Master.RACE_CLASS_LIST[6]] * len(df)
                 elif "G2" in grade_text:
@@ -180,25 +254,150 @@ def get_rawdata_return(html_path_list: list):
     """
     print('preparing raw return table')
     race_return = {}
+    failed: dict[str, str] = {}
     for html_path in tqdm(html_path_list):
-        with open(html_path, 'rb') as f:
-            try:
+        race_id = None
+        try:
+            m = re.findall(r'race\W(\d+)\.bin', html_path)
+            race_id = m[0] if len(m) > 0 else None
+
+            with open(html_path, 'rb') as f:
                 # 保存してあるbinファイルを読み込む
                 html = f.read()
 
-                html = html.replace(b'<br />', b'br')
-                dfs = pd.read_html(html)
+            if html is None or len(html) == 0:
+                raise ValueError('empty html file')
 
-                # dfsの1番目に単勝〜馬連、2番目にワイド〜三連単がある
-                df = pd.concat([dfs[1], dfs[2]])
+            # NOTE:
+            # - netkeiba は meta charset=EUC-JP が多い
+            # - bytes のまま read_html すると環境依存で拾える表が減ることがあるため、先にdecodeしてから読む
+            from io import StringIO
 
-                race_id = re.findall(r'race\W(\d+)\.bin', html_path)[0]
-                df.index = [race_id] * len(df)
-                race_return[race_id] = df
-            except Exception as e:
-                print('error at {}'.format(html_path))
-                print(e)
+            lower = html.lower()
+            # result.html は meta charset="EUC-JP" 形式が多いので、"charset=euc-jp" だけだと検出漏れする。
+            if (b'euc-jp' in lower) or (b'euc_jp' in lower):
+                decoded = html.decode('euc-jp', errors='ignore')
+            else:
+                decoded = html.decode('utf-8', errors='ignore')
+            decoded = decoded.replace('<br />', 'br')
+
+            # まずは result.html の払戻テーブル（Payout_Detail_Table）を直接拾う。
+            # bs4のパーサ相性問題もあり得るので、regex抽出→read_html を優先する。
+            payout_dfs: list[pd.DataFrame] = []
+            try:
+                pattern = (
+                    r'(<table[^>]*class=(?:"[^"]*Payout_Detail_Table[^"]*"|\'[^\']*Payout_Detail_Table[^\']*\')[^>]*>.*?</table>)'
+                )
+                table_htmls = re.findall(pattern, decoded, flags=re.IGNORECASE | re.DOTALL)
+                for table_html in table_htmls:
+                    try:
+                        payout_dfs.append(pd.read_html(StringIO(table_html))[0])
+                    except Exception:
+                        continue
+            except Exception:
+                payout_dfs = []
+
+            if payout_dfs:
+                df = pd.concat(payout_dfs, axis=0)
+            else:
+                # NOTE:
+                # - ページによっては「壊れた表」(列見出しが空など)が混ざり、
+                #   pandas.read_html が IndexError(list index out of range) を投げることがある。
+                # - その場合は BeautifulSoup で <table> を切り出して、読めるものだけを集める。
+                try:
+                    dfs = pd.read_html(StringIO(decoded))
+                except Exception as e_read_html:
+                    from bs4 import BeautifulSoup
+
+                    try:
+                        soup = BeautifulSoup(decoded, 'lxml')
+                        dfs = []
+                        for table in soup.find_all('table'):
+                            try:
+                                dfs.extend(pd.read_html(StringIO(str(table))))
+                            except Exception:
+                                continue
+                    except Exception:
+                        # fallback自体が失敗した場合は、元の例外を優先して投げる
+                        raise e_read_html
+
+                if dfs is None or len(dfs) == 0:
+                    raise ValueError('no tables parsed by read_html')
+
+                payout_keywords = (
+                    '単勝', '複勝', '枠連', '馬連', 'ワイド', '馬単', '三連複', '三連単', 'WIN5'
+                )
+
+                payout_dfs: list[pd.DataFrame] = []
+                for dfi in dfs:
+                    if not isinstance(dfi, pd.DataFrame) or dfi.empty or dfi.shape[1] < 2:
+                        continue
+                    try:
+                        col0 = dfi.columns[0]
+                        s0 = dfi[col0].astype(str)
+                    except Exception:
+                        continue
+                    if s0.str.contains('|'.join(payout_keywords), regex=True).any():
+                        payout_dfs.append(dfi)
+
+                if not payout_dfs:
+                    # 期待する払戻テーブルが無いケースを明示
+                    raise ValueError(
+                        f'payout tables not found in parsed tables: n_tables={len(dfs)}'
+                    )
+
+                df = pd.concat(payout_dfs, axis=0)
+
+            # result.html では払戻金が「190円」のように単位付きで入ることがあるため、後段のReturnProcessorが
+            # 数値変換できるように「円」を除去（NaNを文字列化しないように注意）。
+            for c in (1, 2):
+                if c in df.columns:
+                    ser = df[c]
+                    df[c] = ser.where(ser.isna(), ser.astype(str).str.replace('円', '', regex=False))
+
+            # result.html の複勝/ワイドは <br> 区切りが pandas.read_html で空白区切りになることがある。
+            # 既存ReturnProcessorは 'br' 区切りを前提にしているため、空白→'br' に正規化する。
+            if 0 in df.columns:
+                # 券種名の揺れを正規化（ReturnProcessorが期待する表記に寄せる）
+                df[0] = df[0].replace({'3連複': '三連複', '3連単': '三連単'})
+                multi_mask = df[0].astype(str).isin(['複勝', 'ワイド'])
+                for c in (1, 2):
+                    if c in df.columns:
+                        ser = df.loc[multi_mask, c]
+                        df.loc[multi_mask, c] = ser.where(
+                            ser.isna(),
+                            ser.astype(str).str.replace(r'\s+', 'br', regex=True)
+                        )
+
+            if race_id is None:
+                raise ValueError('race_id not found from html path')
+            df.index = [race_id] * len(df)
+            race_return[race_id] = df
+
+        except Exception as e:
+            key = race_id if race_id is not None else str(html_path)
+            failed[key] = f'{type(e).__name__}: {e}'
+            print('error at {}'.format(html_path))
+            print(e)
+
     # pd.DataFrame型にして一つのデータにまとめる
+    if not race_return:
+        n_total = len(html_path_list)
+        failed_ids = sorted(failed.keys())
+        # 例外メッセージが長くなりすぎないよう先頭だけ
+        sample_ids = failed_ids[:20]
+        sample_errors = list(failed.items())[:5]
+        details = "\n".join([f"- {rid}: {msg}" for rid, msg in sample_errors])
+        raise ValueError(
+            "No return tables were parsed (No objects to concatenate). "
+            f"html_path_list size={n_total}, parsed=0, failed={len(failed_ids)}. "
+            f"failed race_id sample={sample_ids}.\n"
+            "Representative errors:\n"
+            f"{details}\n"
+            "Hints: (1) HTMLがレース結果ページではない/取得失敗ページ, (2) 払戻テーブル未掲載, "
+            "(3) netkeiba側のHTML構造変更, (4) 保存ファイルが空。"
+        )
+
     race_return_df = pd.concat([race_return[key] for key in race_return])
     return race_return_df
 

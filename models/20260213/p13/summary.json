@@ -1,0 +1,36 @@
+{
+  "n_models": 10,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "ensemble_auc_test": 0.7413185158332116,
+  "mean_single_auc_test": 0.734916595273102,
+  "mean_pred_corr": 0.9313772980426852,
+  "pred_diversity": 0.06862270195731479,
+  "ensemble_result": {
+    "label": "ensemble",
+    "best_cal": "none",
+    "best_th": 3.2562814070351758,
+    "best_rr": 1.1,
+    "n_bets": 18,
+    "n_races": 18,
+    "n_hits": 14,
+    "ci_lower": 0.78875,
+    "ci_upper": 1.4612499999999993,
+    "p_rr_lt_1": 0.274,
+    "boot_mean": 1.1046944444444444,
+    "profit_months": "8/11",
+    "auc_test": 0.7413185158332116
+  },
+  "individual_rr_mean": 1.1550093202961176,
+  "individual_rr_std": 0.1846859892711183
+}

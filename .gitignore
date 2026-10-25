@@ -17,6 +17,16 @@ playground.ipynb
 output/**/*.md
 output/**/*.png
 
+# 生成物（ローカル実行の出力）
+data/**/*.pickle.bak_*
+data/**/*.parquet
+# Resumable data collection: downloaded HTML/JSON, raw snapshots and checkpoints
+data/updates/
+data/odds/
+# JRA-VAN training data (private use only; never commit)
+data/jv_training*/
+images/output_*.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -95,6 +105,9 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# VS Code Local History
+.history/
 
 # IPython
 profile_default/

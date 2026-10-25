@@ -2,7 +2,6 @@ import time
 import re
 import random
 import pandas as pd
-from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,6 +11,7 @@ from modules.constants import ResultsCols as Cols
 from modules.constants import Master
 from tqdm.auto import tqdm
 from ._prepare_chrome_driver import prepare_chrome_driver
+from ._netkeiba_http import build_session, fetch_bytes
 
 # 追加：User-Agent一覧
 USER_AGENTS = [
@@ -201,12 +201,13 @@ def scrape_horse_id_list(race_id_list: list) -> list:
     """
     print('sraping horse_id_list')
     horse_id_list = []
+    session = build_session()
     for race_id in tqdm(race_id_list):
         query = '?race_id=' + race_id
         url = UrlPaths.SHUTUBA_TABLE + query
-        req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        html = urlopen(req)
-        soup = BeautifulSoup(html, 'lxml', from_encoding='utf-8')
+        time.sleep(1)
+        html_bytes = fetch_bytes(session, url, referer=UrlPaths.TOP_URL)
+        soup = BeautifulSoup(html_bytes, 'lxml', from_encoding='utf-8')
         horse_td_list = soup.find_all("td", attrs={'class': 'HorseInfo'})
         for td in horse_td_list:
             horse_id = re.findall(r'\d+', td.find('a')['href'])[0]

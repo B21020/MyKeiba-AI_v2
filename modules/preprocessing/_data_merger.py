@@ -18,10 +18,14 @@ class DataMerger:
         peds_processor: PedsProcessor,
         target_cols: list,
         group_cols: list,
+        jockey_stats: pd.DataFrame | None = None,
         ):
         """
         初期処理
+
+        jockey_stats を渡すと、data/tmp/jockey_stats.pickle の代わりにそれをマージする。
         """
+        self._jockey_stats = jockey_stats
         # レース結果テーブル（前処理後）
         self._results = results_processor.preprocessed_data
         # レース情報テーブル（前処理後）
@@ -156,12 +160,14 @@ class DataMerger:
         data/tmp/jockey_stats.pickle を (date, horse_id) 単位でマージする。
         ファイルが存在しない場合は何もしない。
         """
-        stats_path = LocalPaths.JOCKEY_STATS_PATH
-        if not os.path.isfile(stats_path):
-            # 騎手特徴量ファイルがまだ生成されていない場合はスキップ
-            return
-
-        stats = pd.read_pickle(stats_path)
+        if getattr(self, '_jockey_stats', None) is not None:
+            stats = self._jockey_stats.copy()
+        else:
+            stats_path = LocalPaths.JOCKEY_STATS_PATH
+            if not os.path.isfile(stats_path):
+                # 騎手特徴量ファイルがまだ生成されていない場合はスキップ
+                return
+            stats = pd.read_pickle(stats_path)
         # JockeyStatsProcessor では (date, horse_id) をインデックスにしている想定
         stats = stats.reset_index()  # date, horse_id 列を取り出す
 

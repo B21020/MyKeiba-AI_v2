@@ -1,0 +1,2 @@
+label,calibration,threshold,point_rr,n_bets,n_races,n_hits,ci_lower,ci_upper,p_rr_lt_1,boot_mean
+seed_1,platt,3.6381909547738696,1.0454545454545454,11,11,7,0.5636363636363636,1.4909090909090907,0.413,1.0386045454545456

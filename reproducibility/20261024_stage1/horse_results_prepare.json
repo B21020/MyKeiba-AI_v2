@@ -1,0 +1,30 @@
+{
+  "html_dir": "data/html/horse",
+  "html_files_to_parse": 52332,
+  "delta": "data/updates/20261023_results/delta/horse_results.pickle",
+  "delta_rows": 117712,
+  "delta_horses": 10371,
+  "workers": 20,
+  "cutoff": "2026-10-21",
+  "source": "html (raw pickle not loaded: needs >18GiB free memory)",
+  "html_rows": 1309109,
+  "html_horses": 52332,
+  "html_files_skipped_messages": 0,
+  "html_chunks_realigned": 0,
+  "html_column_variants": {
+    "R オッズ タイム ペース レース名 上り 人気 備考 勝ち馬(2着馬) 厩舎ｺﾒﾝﾄ 天気 斤量 日付 映像 枠番 水分量 着差 着順 賞金 距離 通過 開催 頭数 馬体重 馬場 馬場指数 馬番 騎手 ﾀｲﾑ指数": 52332
+  },
+  "duplicate_rows_removed": 0,
+  "rows_unparsed_date": 0,
+  "rows_after_cutoff_removed": 0,
+  "rows": 1426821,
+  "horses": 62703,
+  "date_min": "2006-10-29",
+  "date_max": "2026-10-21",
+  "results_horses": 62703,
+  "results_horses_with_history": 62703,
+  "out": "data/interim/horse_results_merged.pickle",
+  "out_bytes": 354501432,
+  "out_sha256": "b525aac1d979a8b7bc454b2f9388910c4d2ede82b2abcde4e9f85e51e1c6a45a",
+  "seconds": 1512.6
+}

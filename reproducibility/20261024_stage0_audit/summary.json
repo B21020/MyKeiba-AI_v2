@@ -1,0 +1,91 @@
+{
+  "results": {
+    "rows": 5964127,
+    "races": 40804,
+    "exact_duplicate_rows": 5393900,
+    "rows_after_exact_dedup": 570227,
+    "conflicting_key_duplicate_rows": 0,
+    "conflicting_key_duplicate_races": 0,
+    "rows_only_単勝オッズ": 251092,
+    "rows_only_枠": 252015,
+    "rows_only_馬体重(増減)": 251529,
+    "rows_only_厩舎": 252015,
+    "runner_status_counts": {
+      "finished": 565583,
+      "not_finished": 2579,
+      "withdrawn": 2057,
+      "demoted": 8
+    }
+  },
+  "race_info": {
+    "rows": 40804,
+    "duplicate_race_ids": 0,
+    "unparsed_dates": 0,
+    "date_min": "2015-01-04",
+    "date_max": "2026-10-18",
+    "date_year_mismatch": 0,
+    "race_type_counts": {
+      "芝": 19671,
+      "ダート": 19651,
+      "障害": 1482
+    },
+    "missing_course_len": 0,
+    "missing_race_type": 0,
+    "missing_ground_state": 4341,
+    "missing_race_class": 1197
+  },
+  "return_tables": {
+    "rows": 324548,
+    "exact_duplicate_rows": 0,
+    "races": 40804,
+    "races_without_tansho": 0,
+    "races_without_fukusho": 0,
+    "bet_type_rows": {
+      "単勝": 40804,
+      "複勝": 40804,
+      "馬連": 40804,
+      "ワイド": 40804,
+      "馬単": 40804,
+      "三連複": 40804,
+      "三連単": 40804,
+      "枠連": 38920
+    }
+  },
+  "races_total": 40804,
+  "races_include_train": 39322,
+  "races_include_eval": 37423,
+  "reasons": {
+    "no_results": 0,
+    "no_race_info": 0,
+    "bad_date": 0,
+    "no_return_tables": 0,
+    "no_tansho_payout": 0,
+    "no_winner": 0,
+    "jump_race": 1482,
+    "withdrawal": 1943,
+    "odds_1_0": 0
+  },
+  "dead_heat_win_races": 61,
+  "races_after_eval_period_end": 0,
+  "include_train_by_year": {
+    "2015": 3326,
+    "2016": 3326,
+    "2017": 3329,
+    "2018": 3328,
+    "2019": 3325,
+    "2020": 3331,
+    "2021": 3329,
+    "2022": 3331,
+    "2023": 3329,
+    "2024": 3327,
+    "2025": 3335,
+    "2026": 2706
+  },
+  "features": {
+    "caches": 7,
+    "odds_like_columns_in_latest_cache": [
+      "単勝"
+    ],
+    "odds_like_in_p11_positive_perm": []
+  }
+}

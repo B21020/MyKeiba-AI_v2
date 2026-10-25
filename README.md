@@ -16,6 +16,35 @@ pip install wheel
 pip install -r requirements.txt
 ```
 
+# 当日レースを外部端末から予測する（推奨：Tailscale + Streamlit）
+VS CodeでNotebookセルを選択せず、ブラウザから「当日レース取得（馬体重発表済み）→スコア予測」を実行できます。
+
+## ローカル起動
+プロジェクトルートで以下を実行します。
+
+```
+streamlit run apps/score_app.py --server.address 127.0.0.1 --server.port 8501
+```
+
+ブラウザで `http://127.0.0.1:8501` を開き、`当日レース取得 → 予測実行` を押してください。
+
+## 外部端末（ノートPC等）から利用（Tailscale）
+1. このPC（サーバ役）と外部端末にTailscaleをインストールし、同じアカウントでログインします
+2. このPCでStreamlitを「LANにバインド」して起動します
+
+```
+streamlit run apps/score_app.py --server.address 0.0.0.0 --server.port 8501
+```
+
+3. 外部端末のブラウザから、サーバPCのTailscale IPにアクセスします
+    - `http://<サーバPCのTailscale IP>:8501`
+
+補足：
+- Windows Defender Firewallでポート `8501` の受信がブロックされる場合があります（プライベートネットワークで許可）
+- 外出先で使う場合、サーバPCがスリープしない設定が必要です
+- ルータのポート開放は不要（推奨しません）
+
+
 # データフロー図
 ## 全体図
 ![DFD drawio](images/DFD.drawio.png)

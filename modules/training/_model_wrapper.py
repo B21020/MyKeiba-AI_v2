@@ -1,9 +1,15 @@
 import pandas as pd
 import lightgbm as lgb
 from sklearn.metrics import roc_auc_score
-import optuna.integration.lightgbm as lgb_o
+
+try:
+    import optuna.integration.lightgbm as lgb_o
+except ModuleNotFoundError:
+    # 推論では不要。チューニング実行時のみ optuna-integration[lightgbm] を要求する。
+    lgb_o = None
 
 from ._data_splitter import DataSplitter
+from ._feature_schema import align_to_schema, build_schema
 
 
 class ModelWrapper:
@@ -18,6 +24,12 @@ class ModelWrapper:
         """
         optunaによるチューニングを実行。
         """
+
+        if lgb_o is None:
+            raise ModuleNotFoundError(
+                "Could not find `optuna-integration` for `lightgbm`. "
+                "Please run `pip install optuna-integration[lightgbm]` to enable tuning."
+            )
 
         params = {'objective': 'binary'}
 
@@ -52,20 +64,73 @@ class ModelWrapper:
 
     def train(self, datasets: DataSplitter):
         # 学習
-        self.__lgb_model.fit(datasets.X_train.values, datasets.y_train.values)
+        # DataFrameでfitして、列名をモデル側に残す（推論時の列整列に必須）
+        X_train = datasets.X_train
+        y_train = datasets.y_train.values
+
+        fit_kwargs = {}
+
+        # sample_weight（任意）
+        try:
+            w_train = getattr(datasets, 'sample_weight_train', None)
+        except Exception:
+            w_train = None
+        if w_train is not None:
+            fit_kwargs['sample_weight'] = w_train
+        # early stopping（可能な場合のみ）
+        try:
+            X_valid = getattr(datasets, 'X_valid', None)
+            y_valid = getattr(datasets, 'y_valid', None)
+            if X_valid is not None and y_valid is not None and len(X_valid) > 0:
+                fit_kwargs.update(
+                    {
+                        'eval_set': [(X_valid, getattr(y_valid, 'values', y_valid))],
+                        'eval_metric': 'auc',
+                        'callbacks': [lgb.early_stopping(stopping_rounds=50, verbose=False)],
+                    }
+                )
+                try:
+                    w_valid = getattr(datasets, 'sample_weight_valid', None)
+                    if w_valid is not None:
+                        fit_kwargs['eval_sample_weight'] = [w_valid]
+                except Exception:
+                    pass
+        except Exception:
+            fit_kwargs = {}
+
+        try:
+            self.__lgb_model.fit(X_train, y_train, **fit_kwargs)
+        except Exception:
+            # 互換性のためフォールバック
+            self.__lgb_model.fit(X_train, y_train)
+
+        # 学習時のカテゴリ列とカテゴリ順序をモデルに保持（推論時の不一致回避）
+        try:
+            cat_cols = datasets.X_train.select_dtypes(include='category').columns.tolist()
+            if cat_cols:
+                setattr(self.__lgb_model, 'mykeiba_categorical_columns_', list(cat_cols))
+                setattr(
+                    self.__lgb_model,
+                    'mykeiba_categorical_categories_',
+                    {c: list(datasets.X_train[c].cat.categories) for c in cat_cols},
+                )
+        except Exception:
+            pass
         # 学習時の列名をモデルに保持（predict時の整列に利用）
         try:
             self.__lgb_model.feature_name_ = list(datasets.X_train.columns)
         except Exception:
             pass
+        # 学習時の特徴量定義（列名・順序・型・カテゴリ）を保持する。予測時はこれと照合し、欠けた列があれば止める
+        schema = build_schema(datasets.X_train)
+        setattr(self.__lgb_model, 'mykeiba_feature_schema_', schema)
         # AUCを計算して出力
-        # 予測時も列名順に整列（念のため）
         auc_train = roc_auc_score(
-            datasets.y_train, self.__lgb_model.predict_proba(datasets.X_train.reindex(columns=datasets.X_train.columns))[:, 1]
+            datasets.y_train, self.__lgb_model.predict_proba(datasets.X_train)[:, 1]
             )
         auc_test = roc_auc_score(
             datasets.y_test,
-            self.__lgb_model.predict_proba(datasets.X_test.reindex(columns=datasets.X_train.columns, fill_value=0))[:, 1]
+            self.__lgb_model.predict_proba(align_to_schema(datasets.X_test, schema))[:, 1]
             )
         # 特徴量の重要度を記憶しておく
         self.__feature_importance = pd.DataFrame({

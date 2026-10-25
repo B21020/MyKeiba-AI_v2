@@ -6,8 +6,8 @@ class PedsProcessor(AbstractDataProcessor):
     """
     初期処理
     """
-    def __init__(self, filepath):
-        super().__init__(filepath)
+    def __init__(self, filepath, raw_data=None):
+        super().__init__(filepath, raw_data=raw_data)
     
     """
     前処理

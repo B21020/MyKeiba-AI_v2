@@ -1,0 +1,2 @@
+label,test_start,calibration,threshold,point_rr,n_bets,n_races,n_hits,ci_lower,ci_upper,p_rr_lt_1,boot_mean
+2024-01,2024-01-01,isotonic,2.9949748743718594,0.9139423076923077,624,624,358,0.8387820512820514,0.9918309294871793,0.9865,0.9137306089743589

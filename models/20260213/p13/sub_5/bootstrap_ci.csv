@@ -1,0 +1,2 @@
+label,calibration,threshold,point_rr,n_bets,n_races,n_hits,ci_lower,ci_upper,p_rr_lt_1,boot_mean
+sub_5,none,3.2763819095477387,1.1642857142857144,14,14,12,0.8783928571428571,1.3928571428571426,0.1255,1.1624428571428571

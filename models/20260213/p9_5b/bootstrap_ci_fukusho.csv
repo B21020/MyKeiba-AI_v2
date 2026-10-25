@@ -1,0 +1,2 @@
+bet_type,calibration,threshold,anchor_threshold,partner_threshold,point_rr,n_bets,n_races,n_hits,ci_lower,ci_upper,p_rr_lt_1,boot_mean
+fukusho,none,3.393939393939394,,,1.3909090909090909,11,11,9,0.8636363636363636,1.900227272727272,0.07,1.3895727272727272

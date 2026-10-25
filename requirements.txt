@@ -12,3 +12,5 @@ optuna
 jupyterlab
 ipywidgets
 webdriver-manager
+
+streamlit

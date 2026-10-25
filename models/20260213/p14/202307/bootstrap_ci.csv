@@ -1,0 +1,2 @@
+label,test_start,calibration,threshold,point_rr,n_bets,n_races,n_hits,ci_lower,ci_upper,p_rr_lt_1,boot_mean
+2023-07,2023-07-01,none,3.3768844221105527,1.1894736842105262,19,19,14,0.8052631578947369,1.5578947368421052,0.159,1.1895078947368423

@@ -1,0 +1,18 @@
+{
+  "featured": {
+    "path": "data/tmp/featured_data_20261024_stage1.pickle",
+    "sha256": "8089665aa13b00f1a20daa7846e15e8506f076e181eab7ca9ec57ab60381eb13"
+  },
+  "schema": {
+    "path": "reproducibility/20261024_stage1/feature_schema.json",
+    "sha256": "3c8202c5e9c344a153f7162b497b7c797e672b54c8ab2a0ef3518acb66bfcd4e"
+  },
+  "race_inclusion": {
+    "path": "reproducibility/20261024_stage0_audit/race_inclusion.csv",
+    "sha256": "e26539bfc8becab3a7939d27e59345c9443d87b741b6b5a3f824d4c1d7f33a19"
+  },
+  "return_tables": {
+    "path": "data/raw/return_tables.pickle",
+    "sha256": "15efe4cd7f6485923a162c493844367a37da47d03772294fe0f919de68a46216"
+  }
+}
