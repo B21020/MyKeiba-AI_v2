@@ -11,4 +11,5 @@ from ._metrics import (
     brier,
     top1_accuracy,
 )
-from ._payouts import tansho_payouts
+from ._payouts import fukusho_payouts, tansho_payouts
+from ._place import discounted_place, harville_place, simulated_place, place_market_probs, place_pool_shares, place_slots

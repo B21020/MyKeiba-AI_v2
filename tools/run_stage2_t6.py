@@ -50,13 +50,14 @@ DECISION_MIN = 5  # 発走5分前に判断 → それまでに配信された最
 
 
 def t6_odds(race_ids: set[str]) -> pd.DataFrame:
-    """発走 DECISION_MIN 分前までに配信された最新の中間オッズ（単勝）。開発期間のレースだけを読む。"""
+    """発走 DECISION_MIN 分前までに配信された最新の中間オッズ（単勝・複勝の下限と上限）。開発期間のレースだけを読む。"""
     pt = pd.read_csv(ROOT / 'data/odds/post_times/post_times.csv', dtype={'race_id': str})
     pt['post_time'] = pd.to_datetime(pt['post_time'])
     chunks = []
     for c in pd.read_csv(ROOT / 'data/odds/jv_0b41/quotes.csv', chunksize=500_000,
                          dtype={'race_id': str, 'data_kind': str},
-                         usecols=['race_id', 'data_kind', 'published_at', 'horse_number', 'win_odds', 'win_status']):
+                         usecols=['race_id', 'data_kind', 'published_at', 'horse_number', 'win_odds', 'win_status',
+                                  'place_low', 'place_high']):
         c = c[c['race_id'].isin(race_ids) & (c['data_kind'] == '1')]
         chunks.append(c)
     q = pd.concat(chunks)
@@ -66,7 +67,8 @@ def t6_odds(race_ids: set[str]) -> pd.DataFrame:
     latest = q.groupby('race_id')['published_at'].transform('max')
     q = q[q['published_at'] == latest]
     q['age_min'] = (q['post_time'] - pd.Timedelta(minutes=DECISION_MIN) - q['published_at']).dt.total_seconds() / 60
-    return q.rename(columns={'horse_number': '馬番', 'win_odds': 'odds_t6'})[['race_id', '馬番', 'odds_t6', 'win_status', 'published_at', 'age_min']]
+    cols = ['race_id', '馬番', 'odds_t6', 'win_status', 'place_low', 'place_high', 'published_at', 'age_min']
+    return q.rename(columns={'horse_number': '馬番', 'win_odds': 'odds_t6'})[cols]
 
 
 def seg_mask(dates, name, split=None):
