@@ -117,7 +117,77 @@ def parse_o1(raw: bytes) -> dict:
         "data_kind": text[2], "source_published_at": published.isoformat() if published else None,
         "registered": registered, "runners": runners, "win_sale": flags[0],
         "place_sale": flags[1], "place_paid_to": int(text[42]), "quotes": list(rows.values()),
+        # 票数合計（単位百円、返還分を含む）。JV-Data 仕様書 O1 の 928・939・950 バイト目から各11桁
+        "win_pool": pool_value(text[927:938]), "place_pool": pool_value(text[938:949]),
+        "wakuren_pool": pool_value(text[949:960]),
     }
+
+
+def parse_o2(raw: bytes) -> dict:
+    """馬連オッズ（O2、2042バイト）。JV-Data 仕様書 8．オッズ2（馬連）。
+
+    組番 4 桁（例 0102）・オッズ 6 桁（0.1倍単位）・人気 3 桁 × 153 組。馬連票数合計 11 桁（単位百円）。"""
+    if len(raw) == 2040:
+        raw += b"\r\n"
+    if len(raw) != 2042 or raw[-2:] != b"\r\n":
+        raise ValueError("O2 must be 2042 bytes including CRLF")
+    text = raw.decode("ascii")
+    if text[:2] != "O2" or text[2] not in "0123459":
+        raise ValueError("Not a supported O2 record")
+    key = text[11:27]
+    rid = netkeiba_id(key)
+    published = None
+    if text[2] == "1":
+        published = resolve_published(text[27:35], datetime.strptime(key[:8], "%Y%m%d").replace(tzinfo=JST))
+    registered, runners = int(text[35:37]), int(text[37:39])
+    combos = []
+    for i in range(153):
+        f = text[40 + 13 * i:53 + 13 * i]
+        pair = f[:4].strip()
+        if not pair:
+            continue
+        a, b = int(pair[:2]), int(pair[2:])
+        if not 1 <= a < b <= 18:
+            raise ValueError(f"Invalid quinella pair: {pair!r}")
+        odds_raw = f[4:10].strip()
+        special = {"": "unregistered", "000000": "no_votes", "------": "cancelled_before_sale", "******": "cancelled_after_sale"}
+        if odds_raw in special:
+            odds, status = None, special[odds_raw]
+        elif re.fullmatch(r"\d{6}", odds_raw):
+            odds, status = int(odds_raw) / 10, "capped" if odds_raw == "099999" else "quoted"
+        else:
+            raise ValueError(f"Invalid quinella odds: {odds_raw!r}")
+        combos.append({"first": a, "second": b, "odds": odds, "status": status})
+    return {"race_id": rid, "jv_key": key, "data_kind": text[2],
+            "source_published_at": published.isoformat() if published else None,
+            "registered": registered, "runners": runners, "sale": text[39],
+            "combos": combos, "pool": pool_value(text[2029:2040])}
+
+
+def resolve_published(field: str, race_date: datetime) -> datetime:
+    """発表月日時分（mmddHHMM）に年を補う。レース日の7日前〜翌日に入る年がちょうど1つであること。"""
+    if not re.fullmatch(r"\d{8}", field) or field == "00000000":
+        raise ValueError("Interim odds have no valid publication time")
+    candidates = []
+    for year in (race_date.year - 1, race_date.year, race_date.year + 1):
+        try:
+            date = datetime.strptime(str(year) + field, "%Y%m%d%H%M").replace(tzinfo=JST)
+        except ValueError:
+            continue
+        if race_date - timedelta(days=7) <= date < race_date + timedelta(days=1):
+            candidates.append(date)
+    if len(candidates) != 1:
+        raise ValueError("Cannot resolve publication year safely")
+    return candidates[0]
+
+
+def pool_value(raw: str):
+    raw = raw.strip()
+    if not raw:
+        return None
+    if not raw.isdigit():
+        raise ValueError(f"Invalid pool total: {raw!r}")
+    return int(raw)
 
 
 def connect(path: Path) -> sqlite3.Connection:

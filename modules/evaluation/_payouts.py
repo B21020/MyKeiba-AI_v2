@@ -31,3 +31,19 @@ def tansho_payouts(return_tables: pd.DataFrame) -> pd.DataFrame:
 def fukusho_payouts(return_tables: pd.DataFrame) -> pd.DataFrame:
     """columns: race_id, 馬番, fukusho_payout（100円あたり）。複勝が発売されなかったレース（4頭以下）は行が無い。"""
     return _payouts(return_tables, '複勝', 'fukusho_payout')
+
+
+def umaren_payouts(return_tables: pd.DataFrame) -> pd.DataFrame:
+    """columns: race_id, first, second（馬番の小さい順）, umaren_payout（100円あたり）。同着で複数の組が当たることがある。"""
+    t = return_tables[return_tables[0] == '馬連']
+    rows = []
+    for race_id, r in t.iterrows():
+        # 新しい表記は '8 - 9br8 - 12'、古い表記は '7 14 14 15'（2つずつが1組）
+        nums = [int(x) for x in re.findall(r'\d+', str(r[1]))]
+        pays = _split(r[2])
+        if len(nums) != 2 * len(pays):
+            raise ValueError(f'umaren payout mismatch in {race_id}: {r[1]!r} / {r[2]!r}')
+        for k, p in enumerate(pays):
+            a, b = sorted(nums[2 * k:2 * k + 2])
+            rows.append((str(race_id), a, b, float(p.replace(',', ''))))
+    return pd.DataFrame(rows, columns=['race_id', 'first', 'second', 'umaren_payout'])

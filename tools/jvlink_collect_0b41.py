@@ -34,8 +34,8 @@ def split_records(blob: bytes) -> list[bytes]:
     return [blob[i:i + 962] for i in range(0, len(blob), 962)]
 
 
-def collect_race(jv, key: str) -> tuple[int, list[bytes], int | None]:
-    code = int(jv.JVRTOpen('0B41', key))
+def collect_race(jv, key: str, spec: str = '0B41', size: int = 962) -> tuple[int, list[bytes], int | None]:
+    code = int(jv.JVRTOpen(spec, key))
     records, err = [], None
     try:
         if code == 0:
@@ -50,7 +50,7 @@ def collect_race(jv, key: str) -> tuple[int, list[bytes], int | None]:
                     err = rc
                     break
                 raw = bytes(buf)[:rc]
-                if len(raw) == 960:
+                if len(raw) == size - 2:
                     raw += b'\r\n'
                 records.append(raw)
     finally:
