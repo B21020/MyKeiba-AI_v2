@@ -25,6 +25,8 @@ data/updates/
 data/odds/
 # JRA-VAN training data (private use only; never commit)
 data/jv_training*/
+# Decision aid: records built from JRA-VAN odds and saved result pages (private use only)
+data/decision_aid/
 images/output_*.png
 
 # Byte-compiled / optimized / DLL files

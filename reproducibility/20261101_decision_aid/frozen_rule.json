@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-11-01T19:29:01+09:00",
+  "code_commit": "e202b6d7b1ab87068229358e79850d2d831c6e1a",
+  "data": {
+    "period": [
+      "2025-11-01",
+      "2026-07-01"
+    ],
+    "races": 2110,
+    "horses": 30002,
+    "decision": "latest 0B41 interim snapshot published at or before post − 5 min (the 6-min snapshot)",
+    "races_with_t6": 2110,
+    "races_usable": 2110,
+    "races_hits_ne_slots": 10
+  },
+  "win_calibration": {
+    "beta_log_q6": 1.005323,
+    "pseudo_r2_in_sample": 0.238091
+  },
+  "place_calibration": {
+    "intercept": -0.099023,
+    "slope_logit_harville": 0.897716
+  },
+  "paper_rule": {
+    "bet": "複勝",
+    "stake_yen": 100,
+    "expected_value": "calibrated place prob × T-6 place odds low",
+    "threshold": 1.0,
+    "skip_after_min": 4,
+    "snapshot_published_at_or_before_min": 5
+  },
+  "in_sample_picks": {
+    "horses": 163,
+    "races": 154
+  },
+  "backtest": {
+    "source": "models/20261025/place_market/results.json pooled H_1.00 (rolling folds, Jan–Jun 2026)",
+    "bets": 141,
+    "races": 135,
+    "hit_rate": 0.3191489361702128,
+    "roi": 1.3964539007092198,
+    "roi_ci95": [
+      0.46349287321830457,
+      2.9258564890487073
+    ],
+    "mean_place_low": 9.9177304964539
+  },
+  "reference": {
+    "tansho_by_t6_popularity": {
+      "1": 0.7275,
+      "2": 0.7764,
+      "3": 0.711,
+      "4-5": 0.7709,
+      "6-8": 0.8353,
+      "9-12": 0.6882,
+      "13-18": 0.6764
+    },
+    "fukusho_by_t6_popularity": {
+      "1": 0.8495,
+      "2": 0.8182,
+      "3": 0.7952,
+      "4-5": 0.773,
+      "6-8": 0.7304,
+      "9-12": 0.6464,
+      "13-18": 0.5772
+    },
+    "umaren_by_quinella_popularity": {
+      "1": 0.7057,
+      "2-3": 0.7761,
+      "4-10": 0.7403,
+      "11-30": 0.6482,
+      "31-60": 0.6564,
+      "61+": 0.488
+    },
+    "payback_rate": {
+      "単勝": 0.8,
+      "複勝": 0.8,
+      "枠連": 0.775,
+      "馬連": 0.775,
+      "ワイド": 0.775,
+      "馬単": 0.75,
+      "3連複": 0.75,
+      "3連単": 0.725
+    },
+    "note": "開発期間 2025-11〜2026-06、評価対象のレースの全馬（全組）を100円ずつ買った場合の回収率。払戻は確定"
+  },
+  "rule_hash": "62e820a1edd63761bd15d77c7313991dcc6866ea6bfe43d4791325e932cbab60"
+}

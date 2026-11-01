@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>競馬の判断メモ</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e3e2dc;
+    --accent: #2f6f5e; --accent-soft: #e4f0ec; --warn: #9a5b13; --warn-soft: #f8eedf; --faint: #b5b4ad;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161615; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a09f98; --line: #34332f;
+            --accent: #7cc4ad; --accent-soft: #23362f; --warn: #e2a861; --warn-soft: #3a2d1c; --faint: #66655f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14px/1.5 "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; padding: 16px 20px 8px; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  header .meta { color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: 260px 1fr; gap: 16px; padding: 8px 20px 24px; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  h2 { font-size: 14px; margin: 0 0 8px; font-weight: 600; }
+  .races { list-style: none; margin: 0; padding: 0; }
+  .races li { display: grid; grid-template-columns: 56px 1fr auto; gap: 6px; padding: 6px 8px; border-radius: 6px;
+              cursor: pointer; align-items: center; }
+  .races li:hover { background: var(--accent-soft); }
+  .races li.sel { background: var(--accent-soft); outline: 1px solid var(--accent); }
+  .badge { font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted);
+           white-space: nowrap; }
+  .badge.decided { color: var(--accent); border-color: var(--accent); }
+  .badge.skipped { color: var(--warn); border-color: var(--warn); }
+  .badge.settled { color: var(--muted); }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 5px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  th:first-child, td:first-child { text-align: center; }
+  td.low { color: var(--faint); }
+  tr.pick td { background: var(--accent-soft); }
+  .pickmark { color: var(--accent); font-weight: 600; }
+  .stack { display: grid; gap: 16px; }
+  .race-head { display: flex; flex-wrap: wrap; gap: 4px 20px; align-items: baseline; margin-bottom: 8px; }
+  .race-head .big { font-size: 20px; font-weight: 600; }
+  .countdown { font-size: 13px; color: var(--muted); }
+  .countdown strong { color: var(--ink); }
+  .note { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+  .warn { background: var(--warn-soft); color: var(--warn); border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .stat { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+  .stat .k { color: var(--muted); font-size: 12px; }
+  .stat .v { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ref { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .empty { color: var(--muted); padding: 16px 0; }
+  .scroll { overflow-x: auto; }
+  main > * { min-width: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>競馬の判断メモ</h1>
+  <span class="meta" id="meta">読み込み中…</span>
+</header>
+<main>
+  <section>
+    <h2>今日のレース</h2>
+    <ul class="races" id="races"></ul>
+  </section>
+  <div class="stack">
+    <section id="race"><div class="empty">レースを選んでください</div></section>
+    <section>
+      <h2>紙上の検証（複勝・固定した規則、お金は使っていません）</h2>
+      <div class="stats" id="paper"></div>
+      <p class="note" id="paper-note"></p>
+    </section>
+    <section>
+      <h2>券種と人気ごとの平均の戻り（100円あたり、開発期間の実績）</h2>
+      <div class="ref" id="ref"></div>
+      <p class="note">全部の馬（組）を100円ずつ買った場合に、平均で戻ってきた額。100円との差が期待損失。人気薄ほど戻りが小さい傾向があります。</p>
+    </section>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let state = null, selected = null, fetchedAt = 0;
+const STATUS = { waiting: '待ち', decided: '数字あり', skipped: '見送り', settled: '確定' };
+const yen = (v) => v == null ? '–' : Math.round(v) + '円';
+const pct = (v, d = 1) => v == null ? '–' : (v * 100).toFixed(d) + '%';
+const odds = (v) => v == null ? '–' : v.toFixed(1);
+const hm = (iso) => iso ? iso.slice(11, 16) : '–';
+const hms = (iso) => iso ? iso.slice(11, 19) : '–';
+function mmss(sec) {
+  if (sec == null) return '–';
+  const s = Math.round(Math.abs(sec)), m = Math.floor(s / 60), r = String(s % 60).padStart(2, '0');
+  return (sec < 0 ? '−' : '') + m + ':' + r;
+}
+function elapsed() { return (Date.now() - fetchedAt) / 1000; }
+
+function pickDefault() {
+  if (!state) return null;
+  const upcoming = state.races.filter(r => r.seconds_to_post > -120);
+  const decided = upcoming.find(r => r.status === 'decided' || r.status === 'skipped');
+  return (decided || upcoming[0] || state.races[state.races.length - 1] || {}).race_id || null;
+}
+
+function renderRaces() {
+  const ul = $('races'); ul.innerHTML = '';
+  for (const r of state.races) {
+    const li = document.createElement('li');
+    if (r.race_id === selected) li.className = 'sel';
+    li.innerHTML = `<span>${hm(r.post_time)}</span><span>${r.label}${r.picks ? ` <span class="pickmark">●${r.picks}</span>` : ''}</span>
+      <span class="badge ${r.status}">${STATUS[r.status]}</span>`;
+    li.onclick = () => { selected = r.race_id; render(); };
+    ul.appendChild(li);
+  }
+}
+
+function renderRace() {
+  const r = state.races.find(x => x.race_id === selected);
+  const el = $('race');
+  if (!r) { el.innerHTML = '<div class="empty">今日のレースはありません</div>'; return; }
+  const toPost = r.seconds_to_post - elapsed(), toDecision = r.seconds_to_decision - elapsed();
+  const clock = toPost < -120 ? '<span class="countdown">発走済み</span>'
+    : toPost > 6 * 3600 ? '' : `<span class="countdown">発走まで <strong>${mmss(toPost)}</strong>　判断（発走4分前）まで <strong>${toDecision > 0 ? mmss(toDecision) : '過ぎました'}</strong></span>`;
+  let head = `<div class="race-head"><span class="big">${r.label}</span><span>発走 ${hm(r.post_time)}</span>${clock}</div>`;
+  if (r.status === 'waiting') {
+    el.innerHTML = head + '<div class="empty">発走6分前の配信を待っています（届くのはおおむね発走4分20秒前ごろ）。</div>';
+    return;
+  }
+  let info = `<div class="countdown">使った配信：発表 ${hm(r.published_at)}、受け取り ${hms(r.received_at)}`
+    + (r.win_pool_yen ? `、単勝の売上（その時点） ${(r.win_pool_yen / 1e6).toFixed(1)}百万円` : '') + '</div>';
+  if (r.status === 'skipped' || r.reason) info += `<div class="warn">見送り：${r.reason === 'no T-6 snapshot received'
+      ? '発走4分前までに6分前の配信を受け取れませんでした' : '6分前の配信の受け取りが発走4分前より後でした'}（紙上の検証の対象外）</div>`;
+  if (!r.horses.length) { el.innerHTML = head + info; return; }
+  const rows = r.horses.map(h => {
+    const lowW = h.ev_win < 0.7, lowP = h.ev_place != null && h.ev_place < 0.7;
+    return `<tr class="${h.pick ? 'pick' : ''}"><td>${h.horse_number}</td><td>${h.win_popularity ?? '–'}</td>
+      <td>${odds(h.win_odds)}</td><td>${pct(h.p_win)}</td><td class="${lowW ? 'low' : ''}">${yen(h.ev_win * 100)}</td>
+      <td>${odds(h.place_low)}–${odds(h.place_high)}</td><td>${pct(h.p_place)}</td>
+      <td class="${lowP ? 'low' : ''}">${h.ev_place == null ? '–' : yen(h.ev_place * 100)}</td>
+      <td>${h.pick ? '<span class="pickmark">●</span>' : ''}</td></tr>`;
+  }).join('');
+  el.innerHTML = head + info + `<div class="scroll"><table><thead><tr><th>馬番</th><th>人気</th><th>単勝</th><th>勝つ確率</th>
+    <th>単勝の戻り</th><th>複勝</th><th>複勝圏の確率</th><th>複勝の戻り</th><th>紙上</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <p class="note">確率は発走6分前のオッズから、固定した補正で出したもの（市場の見立て）。「戻り」は100円買ったときの平均の戻り（複勝はオッズの下限で計算）。70円未満は薄い色。
+    ● は紙上の検証で記録した複勝（補正した確率 × 複勝の下限 ≥ 1.00）。購入を勧めるものではありません。</p>`;
+}
+
+function stat(k, v) { return `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`; }
+function renderPaper() {
+  const t = state.paper_total, d = state.paper_today, bt = state.rule.backtest;
+  $('paper').innerHTML = stat('今日の記録', `${d.bets}件`) + stat('今日の回収率', d.roi == null ? '–' : pct(d.roi, 0))
+    + stat('累計の記録', `${t.bets}件（${t.days ?? 0}日）`) + stat('累計の的中', t.hits == null ? '–' : `${t.hits}件`)
+    + stat('累計の回収率', t.roi == null ? '–' : pct(t.roi, 0))
+    + stat('累計の区間（95%）', t.roi_ci95 ? `${pct(t.roi_ci95[0], 0)}〜${pct(t.roi_ci95[1], 0)}` : '–');
+  $('paper-note').textContent = `開発期間の同じ規則（2026年1〜6月）：${bt.bets}件、回収率 ${pct(bt.roi, 0)}`
+    + `（区間 ${pct(bt.roi_ci95[0], 0)}〜${pct(bt.roi_ci95[1], 0)}）。精算待ち ${t.pending}件、返還 ${t.refunded}件。`
+    + ` 評価は3か月ごとに途中報告、1年（または300件）で判定。規則 ${state.rule.rule_hash.slice(0, 12)}`;
+}
+
+function refTable(title, obj, labelFmt) {
+  const rows = Object.entries(obj).map(([k, v]) => `<tr><td>${labelFmt(k)}</td><td>${yen(v * 100)}</td></tr>`).join('');
+  return `<div><table><thead><tr><th>${title}</th><th>平均の戻り</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function renderRef() {
+  const r = state.reference;
+  $('ref').innerHTML = refTable('単勝（6分前の人気）', r.tansho_by_t6_popularity, k => k + '番人気')
+    + refTable('複勝（6分前の単勝の人気）', r.fukusho_by_t6_popularity, k => k + '番人気')
+    + refTable('馬連（6分前の馬連の人気）', r.umaren_by_quinella_popularity, k => k + '番人気の組');
+}
+
+function render() {
+  if (!state) return;
+  if (!selected || !state.races.find(r => r.race_id === selected)) selected = pickDefault();
+  $('meta').textContent = `${state.date}　更新 ${new Date(fetchedAt).toLocaleTimeString('ja-JP')}`;
+  renderRaces(); renderRace(); renderPaper(); renderRef();
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/state' + location.search, { cache: 'no-store' });
+    state = await res.json(); fetchedAt = Date.now(); render();
+  } catch (e) { $('meta').textContent = '読み込めませんでした（動いているか確認してください）'; }
+}
+load();
+setInterval(load, 15000);
+setInterval(() => { if (state) renderRace(); }, 1000);
+</script>
+</body>
+</html>
